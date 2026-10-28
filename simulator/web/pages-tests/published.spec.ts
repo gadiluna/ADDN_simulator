@@ -1,5 +1,18 @@
 import { expect, test } from '@playwright/test';
 
+test('presentation data and navigation work under the Pages prefix', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('./?presentation=1&lemma=lemma-15');
+  await expect(page.getByTestId('presentation-stage')).toHaveAttribute('data-example', 'lemma-15');
+  await expect(page.getByRole('combobox', { name: 'Choose lemma' }).locator('option')).toHaveCount(17);
+  await page.getByRole('button', { name: 'Next step', exact: true }).click();
+  await expect(page.getByTestId('presentation-stage')).toHaveAttribute('data-frame', '1');
+  await page.getByRole('link', { name: '← Simulator', exact: true }).click();
+  await expect(page.locator('.engine-status')).toHaveText('Ready');
+  expect(errors).toEqual([]);
+});
+
 test('the production site loads its engine and completes a run under the Pages prefix', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));

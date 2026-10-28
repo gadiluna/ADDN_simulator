@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "paper_sha256": "6d00eaf6757b84b65b0d6e4c85e5f8625e7446635a9b29af7f5d5adecf682e37",
+  "format": "H.264 / MP4, 30 fps, no audio, English captions burned into the image",
+  "clips": [
+    {
+      "id": "lemma-01",
+      "file": "lemma-01.mp4",
+      "title": "Flat level",
+      "seconds": 20,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-01.srt",
+      "sha256": "fb12658e15b2662df1829d210dc5e121db53152a0d9800c6584cf9dc73a26d8d"
+    },
+    {
+      "id": "lemma-02",
+      "file": "lemma-02.mp4",
+      "title": "Credit under refinement",
+      "seconds": 20,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-02.srt",
+      "sha256": "1441276adde90af514d53ead7a7269caf61d27be9f134a66d3cb4382d630ad02"
+    },
+    {
+      "id": "lemma-03",
+      "file": "lemma-03.mp4",
+      "title": "Minimum-ratio closure",
+      "seconds": 20,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-03.srt",
+      "sha256": "934a810374fbcdee89aafd6f18270f386d4fe0ef1948ea3959cb1ff7e2bf0ce6"
+    },
+    {
+      "id": "lemma-04",
+      "file": "lemma-04.mp4",
+      "title": "Credit loss",
+      "seconds": 25,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-04.srt",
+      "sha256": "d5e795aaaea9b20f55dd15c542acea48e6b23197cdc3dc5e920f4d0f19a42597"
+    },
+    {
+      "id": "lemma-05",
+      "file": "lemma-05.mp4",
+      "title": "Tail exposure",
+      "seconds": 20,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-05.srt",
+      "sha256": "99636cb31c46ff0d6ef236b91e1c2f5ac4731d480ae1ecd325ae16f5be35b2e1"
+    },
+    {
+      "id": "lemma-06",
+      "file": "lemma-06.mp4",
+      "title": "Fibers inside a proper subset",
+      "seconds": 20,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-06.srt",
+      "sha256": "42e8893c76becb3f3eaf5b38751e93f95e4dffadbc841bab7db45f79aabdd2d4"
+    },
+    {
+      "id": "lemma-07",
+      "file": "lemma-07.mp4",
+      "title": "Short audit",
+      "seconds": 20,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-07.srt",
+      "sha256": "1aa863a8218445f29ed89cd6fa419d83bbffada6556ef5103f3559c40ec6c6e7"
+    },
+    {
+      "id": "lemma-08",
+      "file": "lemma-08.mp4",
+      "title": "Two-center graph",
+      "seconds": 20,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-08.srt",
+      "sha256": "f89495ad6123d5a7f042542efce7a432694665ee24ea361aa32acda3f7557149"
+    },
+    {
+      "id": "lemma-09",
+      "file": "lemma-09.mp4",
+      "title": "Bounded compatible orders",
+      "seconds": 18,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-09.srt",
+      "sha256": "9e6553268ff6876d5fc79ba4f60253dc294fbe0116a4117afe7a6bf58c5d3028"
+    },
+    {
+      "id": "lemma-10",
+      "file": "lemma-10.mp4",
+      "title": "Eliminating a balanced auxiliary vertex",
+      "seconds": 18,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-10.srt",
+      "sha256": "200f336f0ef9b3179624a2f53ce86248d5a3a502215ddc0ef197c9987646a407"
+    },
+    {
+      "id": "lemma-11",
+      "file": "lemma-11.mp4",
+      "title": "Realizing a transition",
+      "seconds": 18,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-11.srt",
+      "sha256": "52f9296a0a409cf62900b344c6089409af19c1374bb906fb1e0bc5b0af0b2f61"
+    },
+    {
+      "id": "lemma-12",
+      "file": "lemma-12.mp4",
+      "title": "Small full prefix",
+      "seconds": 18,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-12.srt",
+      "sha256": "d218113a278a1980159aa532ee4a03c2738e1d2dc931ced21f8b629c079bee52"
+    },
+    {
+      "id": "lemma-13",
+      "file": "lemma-13.mp4",
+      "title": "Fixed-order certificates",
+      "seconds": 18,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-13.srt",
+      "sha256": "675eb7a4399a3dfd95af594708e4e38407607a0a34430fbd42115479ec7ffb90"
+    },
+    {
+      "id": "lemma-14",
+      "file": "lemma-14.mp4",
+      "title": "One reference solution, or an exact cover",
+      "seconds": 18,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-14.srt",
+      "sha256": "7210d902daa79a361b95d60d49b118cde6e57901be827d9095ef773c0753f179"
+    },
+    {
+      "id": "lemma-15",
+      "file": "lemma-15.mp4",
+      "title": "Common path prefix",
+      "seconds": 18,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-15.srt",
+      "sha256": "668a684dbbcd35abbc961e91645a27dbdd6396688f36f6258d80cecc8ab1a757"
+    },
+    {
+      "id": "lemma-16",
+      "file": "lemma-16.mp4",
+      "title": "The first visible level is full",
+      "seconds": 18,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lemma-16.srt",
+      "sha256": "652c89cac19c5d17ab2394b7cbe6467855d71d63b3e0a27b0170b78642d52b6d"
+    },
+    {
+      "id": "lower-bound",
+      "file": "lower-bound.mp4",
+      "title": "Different sizes, identical leader views",
+      "seconds": 25,
+      "width": 1920,
+      "height": 1080,
+      "caption_file": "lower-bound.srt",
+      "sha256": "23e0ea3ee928ea9d773bc270e45e064d8ef31740a33714f75056fe621d95f9af"
+    }
+  ]
+}

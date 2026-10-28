@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:05,000
+These nonleaders begin with the same memory.
+
+2
+00:00:05,000 --> 00:00:10,000
+The remaining four agents can carry credit.
+
+3
+00:00:10,000 --> 00:00:15,000
+Two child classes now need two representatives.
+
+4
+00:00:15,000 --> 00:00:20,000
+On this star, equal credit preserves all three leaves in one child class.

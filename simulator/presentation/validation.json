@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "paper_sha256": "6d00eaf6757b84b65b0d6e4c85e5f8625e7446635a9b29af7f5d5adecf682e37",
+  "engine_sha256": "9b6211f31700f9a7ce6dd0b34dc4f913287da0d36821722a9bd74251b4e42916",
+  "lemma_count": 16,
+  "illustration_count": 17,
+  "cases": [
+    {
+      "file": "lemma-01.json",
+      "n": 4,
+      "leaders": 1,
+      "rounds": 7,
+      "sha256": "e27331bace03b1b6c728875bf4ce19e868a44ca234f6a3400832254423a001b4"
+    },
+    {
+      "file": "lemma-02-2.json",
+      "n": 4,
+      "leaders": 1,
+      "rounds": 7,
+      "sha256": "360adc7a8c3c8c244a7001011a144fe04ed5082520d9cdcfd7186071deba7646"
+    },
+    {
+      "file": "lemma-02.json",
+      "n": 6,
+      "leaders": 1,
+      "rounds": 11,
+      "sha256": "0221bee804278f1b35512b579db0b7ebde6de64d115f5357c54bc817ad5335c4"
+    },
+    {
+      "file": "lemma-03.json",
+      "n": 4,
+      "leaders": 1,
+      "rounds": 7,
+      "sha256": "6ebc1c0e4b48510dbffa9435e0d2ae1ba5744adc6b2c661e924533d23802a61e"
+    },
+    {
+      "file": "lemma-04.json",
+      "n": 6,
+      "leaders": 1,
+      "rounds": 11,
+      "sha256": "7286c4264dd4b189eea3d4fbeaedb07f76985d784cd5609794fc70edc7f96201"
+    },
+    {
+      "file": "lemma-05.json",
+      "n": 5,
+      "leaders": 1,
+      "rounds": 9,
+      "sha256": "e262c81a7593ef033d902f40080f2cc3d576e6ffb9c6dd97994cbac81be6e111"
+    },
+    {
+      "file": "lemma-06.json",
+      "n": 5,
+      "leaders": 1,
+      "rounds": 9,
+      "sha256": "680705aabf7b731a90151a8ffae522cd003df3225739e38144df0fd3e78edfdf"
+    },
+    {
+      "file": "lemma-07.json",
+      "n": 5,
+      "leaders": 2,
+      "rounds": 8,
+      "sha256": "4cef3ff3b4fbcf26d0e8794e334363c2a7e501c93733efbf135cb8fee637b69e"
+    },
+    {
+      "file": "lemma-08-2.json",
+      "n": 4,
+      "leaders": 2,
+      "rounds": 7,
+      "sha256": "5493ca15cfc3233a1d340fc5b7d353862bd2a86a3646232a599a35eb38121254"
+    },
+    {
+      "file": "lemma-08.json",
+      "n": 4,
+      "leaders": 2,
+      "rounds": 7,
+      "sha256": "4b364684226f6b1e066c1896d3bcf878b186dac1168c214ccfdf7b05187b3845"
+    },
+    {
+      "file": "lemma-09-2.json",
+      "n": 3,
+      "leaders": 1,
+      "rounds": 5,
+      "sha256": "ac4eb4c59ed30dd0c9a2a05e1260b35006486fa14ace137df70108f63fdf4f98"
+    },
+    {
+      "file": "lemma-09-3.json",
+      "n": 4,
+      "leaders": 1,
+      "rounds": 7,
+      "sha256": "92b19a755d077b753ae03325198e05dca8cead1683e2139b9ada18d8d1f4164a"
+    },
+    {
+      "file": "lemma-09.json",
+      "n": 6,
+      "leaders": 1,
+      "rounds": 11,
+      "sha256": "95b50c28eabaa6decdcd1cda25783e23e4a629b30fd699dc77553489162a8867"
+    },
+    {
+      "file": "lemma-11.json",
+      "n": 4,
+      "leaders": 2,
+      "rounds": 6,
+      "sha256": "12be6a05f6bd0ec5b73469cc63ef4fdcf269919767888ff35bb070145cf02391"
+    },
+    {
+      "file": "lemma-12-2.json",
+      "n": 6,
+      "leaders": 1,
+      "rounds": 11,
+      "sha256": "f7f0195b861ed2f85e98bff5efdee6c15473c597c9a41fb0956dcf2e042c6f45"
+    },
+    {
+      "file": "lemma-12.json",
+      "n": 6,
+      "leaders": 1,
+      "rounds": 11,
+      "sha256": "cd7ce29a782fb5a73e0d883aea068748d8a1b6147c463b99e6cc29b7a769f62c"
+    },
+    {
+      "file": "lemma-13.json",
+      "n": 4,
+      "leaders": 1,
+      "rounds": 7,
+      "sha256": "1f4af0e8ea3237995ffe6626a05db5015bd2db04c7839d3f109cfac39bb8728f"
+    },
+    {
+      "file": "lemma-15-2.json",
+      "n": 23,
+      "leaders": 1,
+      "rounds": 45,
+      "sha256": "0fc7b039902a46221ac400cb62db9767f802b2fc8dc2485bdf0706f285b20b97"
+    },
+    {
+      "file": "lemma-15.json",
+      "n": 22,
+      "leaders": 1,
+      "rounds": 43,
+      "sha256": "84c4d6205ef4c98e1f0683f114e8d4cff9a28a76bd781b0dfb26319f12e1a050"
+    },
+    {
+      "file": "lemma-16-2.json",
+      "n": 23,
+      "leaders": 1,
+      "rounds": 45,
+      "sha256": "0fc7b039902a46221ac400cb62db9767f802b2fc8dc2485bdf0706f285b20b97"
+    },
+    {
+      "file": "lemma-16.json",
+      "n": 22,
+      "leaders": 1,
+      "rounds": 43,
+      "sha256": "84c4d6205ef4c98e1f0683f114e8d4cff9a28a76bd781b0dfb26319f12e1a050"
+    },
+    {
+      "file": "lower-bound-2.json",
+      "n": 5,
+      "leaders": 2,
+      "rounds": 8,
+      "sha256": "5689c6543493de1c3954143cc77daee547382c1e05826be16e80ad7c508e6adb"
+    },
+    {
+      "file": "lower-bound.json",
+      "n": 4,
+      "leaders": 2,
+      "rounds": 6,
+      "sha256": "6d0b38fbfde27fce943326cc0bc3b64a85eaff5d3a0e310d966c6b950ccf0d80"
+    }
+  ],
+  "scope": "Concrete examples only; construction assertions and complete C/Fraction trace comparisons, not a proof or a network-recognition solver."
+}

@@ -1,0 +1,19 @@
+1
+00:00:00,000 --> 00:00:05,000
+The leader and nonleader classes begin with four units of credit.
+
+2
+00:00:05,000 --> 00:00:10,000
+A new memory class needs one more reserved representative.
+
+3
+00:00:10,000 --> 00:00:15,000
+A new memory class needs one more reserved representative.
+
+4
+00:00:15,000 --> 00:00:20,000
+All six agents now have distinct memories.
+
+5
+00:00:20,000 --> 00:00:25,000
+The next level preserves credit. Here the candidate is the true size: six.

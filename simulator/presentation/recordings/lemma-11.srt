@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:04,500
+Every agent needs one message from the opposite class.
+
+2
+00:00:04,500 --> 00:00:09,000
+Each class supplies two arcs, exactly matching the two required receipts.
+
+3
+00:00:09,000 --> 00:00:13,500
+Route outgoing capacity through one auxiliary vertex per old class.
+
+4
+00:00:13,500 --> 00:00:18,000
+Shortcut the paths to obtain one strongly connected communication round.

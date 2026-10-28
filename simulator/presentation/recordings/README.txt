@@ -1,0 +1,1 @@
+Open index.html to preview every clip. Insert the MP4 files directly into PowerPoint or Keynote. These videos are silent, with English annotations burned into the image. SRT files allow you to reuse or edit the text. Refer to STORYBOARD.md for the general proof connection and scope of each example.

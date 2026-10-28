@@ -11,6 +11,14 @@ mathematical checks behind its counting decision. The interface includes
 lower-bound examples, configurable random networks, scenario import/export,
 round replay, and resizable network and memory panels.
 
+## STOC presentation branch
+
+The `presentation/stoc-lemma-demos` branch includes visual demonstrations of
+all 16 lemmas, a paired lower-bound example, and annotated Full HD recordings.
+Open `/?presentation=1` on the local app, or browse the
+[clip gallery](simulator/presentation/recordings/index.html) and
+[presentation guide](simulator/presentation/README.md).
+
 ## Run locally
 
 ```sh

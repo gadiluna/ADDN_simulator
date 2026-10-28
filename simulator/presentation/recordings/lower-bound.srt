@@ -1,0 +1,19 @@
+1
+00:00:00,000 --> 00:00:05,000
+Both networks have two leaders, but one has an extra nonleader.
+
+2
+00:00:05,000 --> 00:00:10,000
+A new center sends its old matching memory before learning its new information.
+
+3
+00:00:10,000 --> 00:00:15,000
+The designated leaders still see identical histories.
+
+4
+00:00:15,000 --> 00:00:20,000
+The relay delays the difference: the leader views still match through round five.
+
+5
+00:00:20,000 --> 00:00:25,000
+At round six the leader views diverge. Before then, the sizes were indistinguishable.

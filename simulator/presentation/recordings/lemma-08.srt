@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:05,000
+Choose z in U and z′ in W.
+
+2
+00:00:05,000 --> 00:00:10,000
+Every other agent reaches z directly; z reaches U through z′.
+
+3
+00:00:10,000 --> 00:00:15,000
+Each W agent receives two copies of z's old memory.
+
+4
+00:00:15,000 --> 00:00:20,000
+With c = 1, W receives one copy and u's outdegree becomes two.

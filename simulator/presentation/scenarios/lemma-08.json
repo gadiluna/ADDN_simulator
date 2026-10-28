@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "n": 4,
+  "leaders": [
+    0,
+    1
+  ],
+  "variant": "core",
+  "rounds": [
+    {
+      "edges": [
+        {
+          "source": 0,
+          "target": 2,
+          "multiplicity": "2"
+        },
+        {
+          "source": 0,
+          "target": 3,
+          "multiplicity": "2"
+        },
+        {
+          "source": 3,
+          "target": 0,
+          "multiplicity": "1"
+        },
+        {
+          "source": 3,
+          "target": 1,
+          "multiplicity": "1"
+        },
+        {
+          "source": 1,
+          "target": 0,
+          "multiplicity": "1"
+        },
+        {
+          "source": 2,
+          "target": 0,
+          "multiplicity": "2"
+        }
+      ]
+    }
+  ],
+  "repeat_last": true,
+  "name": "Two-center graph, c=2"
+}

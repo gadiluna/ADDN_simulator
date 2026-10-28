@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:05,000
+Start with the observer at round four.
+
+2
+00:00:05,000 --> 00:00:10,000
+Each backward step adds an outside predecessor, until the whole network is included.
+
+3
+00:00:10,000 --> 00:00:15,000
+Each backward step adds an outside predecessor, until the whole network is included.
+
+4
+00:00:15,000 --> 00:00:20,000
+Four backward steps expose all five agents in this cycle.

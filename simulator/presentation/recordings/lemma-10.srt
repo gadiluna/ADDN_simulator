@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:04,500
+The auxiliary vertex receives and sends the same number of arcs.
+
+2
+00:00:04,500 --> 00:00:09,000
+Pairing each incoming arc with its own return creates three isolated loops.
+
+3
+00:00:09,000 --> 00:00:13,500
+Cross the pairings to join two components while preserving all degrees.
+
+4
+00:00:13,500 --> 00:00:18,000
+One more switch produces a directed cycle on the original vertices.

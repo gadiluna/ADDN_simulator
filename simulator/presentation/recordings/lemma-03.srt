@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:05,000
+Suppose only the leader class has the smallest ratio.
+
+2
+00:00:05,000 --> 00:00:10,000
+Strong connectivity forces communication out of every proper nonempty set.
+
+3
+00:00:10,000 --> 00:00:15,000
+The trial counts only two destinations for three outgoing messages.
+
+4
+00:00:15,000 --> 00:00:20,000
+With the checked flow equations, no larger-ratio or hidden class can lie beyond the set.

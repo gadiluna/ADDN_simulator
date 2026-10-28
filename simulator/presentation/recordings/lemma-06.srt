@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:05,000
+At first, the nonleader fiber crosses the boundary of S.
+
+2
+00:00:05,000 --> 00:00:10,000
+The leader's message separates agent 1 from the outside agents.
+
+3
+00:00:10,000 --> 00:00:15,000
+One more round isolates agent 2. Both nonleader slots in S are now used.
+
+4
+00:00:15,000 --> 00:00:20,000
+Agent 2 now belongs to an inside fiber, and its next message leaves S.

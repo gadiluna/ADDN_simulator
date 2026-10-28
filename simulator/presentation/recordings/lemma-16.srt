@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:04,500
+The first visible level can contain at most 23 agents; the last needs at least 21.
+
+2
+00:00:04,500 --> 00:00:09,000
+Strong connectivity makes every proper visible support shrink at the next level.
+
+3
+00:00:09,000 --> 00:00:13,500
+After two strict decreases, only the required minimum remains.
+
+4
+00:00:13,500 --> 00:00:18,000
+Three losses exceed the two-agent slack. The first visible level must be full.

@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:04,500
+The observer sees one incoming nonleader state; hidden agents may have many different histories.
+
+2
+00:00:04,500 --> 00:00:09,000
+Keep the observer's incoming arc and outdegree exactly as before.
+
+3
+00:00:09,000 --> 00:00:13,500
+Four agents now have the same degree and incoming history, so they form one block.
+
+4
+00:00:13,500 --> 00:00:18,000
+The network keeps its size, but its full history table becomes simpler.

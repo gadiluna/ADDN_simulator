@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:04,500
+The first position separates; every later position still has the same history.
+
+2
+00:00:04,500 --> 00:00:09,000
+One more position becomes distinguishable in each network.
+
+3
+00:00:09,000 --> 00:00:13,500
+The split moves along the path, one round at a time.
+
+4
+00:00:13,500 --> 00:00:18,000
+The same labeled classes remain, even though their suffix fibers have different sizes.

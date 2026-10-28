@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:04,500
+A certificate records groups of equal histories, not one row per physical agent.
+
+2
+00:00:04,500 --> 00:00:09,000
+The nonleader parent splits into fibers of one and two agents.
+
+3
+00:00:09,000 --> 00:00:13,500
+Every required receipt is supplied, and the selected bottom node exposes exactly the input vista.
+
+4
+00:00:13,500 --> 00:00:18,000
+Changing one fiber size breaks conservation and the claimed network order.

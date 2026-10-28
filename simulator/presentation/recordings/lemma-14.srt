@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:04,500
+Two disjoint triples cover all six elements.
+
+2
+00:00:04,500 --> 00:00:09,000
+Replacing S2 by S3 covers one element twice and leaves one uncovered.
+
+3
+00:00:09,000 --> 00:00:13,500
+Use one digit per element. The base is large enough that counts cannot carry.
+
+4
+00:00:13,500 --> 00:00:18,000
+The single reference choice and the exact cover have the same encoded weight.
