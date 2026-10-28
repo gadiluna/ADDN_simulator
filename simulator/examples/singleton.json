@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "n": 1,
+  "leaders": [
+    0
+  ],
+  "variant": "sharp",
+  "rounds": [
+    {
+      "edges": []
+    }
+  ],
+  "repeat_last": true,
+  "name": "One agent, no edges"
+}

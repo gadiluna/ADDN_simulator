@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "n": 4,
+  "leaders": [
+    0
+  ],
+  "variant": "sharp",
+  "rounds": [
+    {
+      "edges": [
+        {
+          "source": 0,
+          "target": 1,
+          "multiplicity": "1"
+        },
+        {
+          "source": 1,
+          "target": 2,
+          "multiplicity": "1"
+        },
+        {
+          "source": 2,
+          "target": 3,
+          "multiplicity": "1"
+        },
+        {
+          "source": 1,
+          "target": 0,
+          "multiplicity": "1"
+        },
+        {
+          "source": 2,
+          "target": 1,
+          "multiplicity": "1"
+        },
+        {
+          "source": 3,
+          "target": 2,
+          "multiplicity": "1"
+        },
+        {
+          "source": 3,
+          "target": 3,
+          "multiplicity": "1"
+        }
+      ]
+    }
+  ],
+  "repeat_last": true,
+  "name": "one-leader-loop-path"
+}
