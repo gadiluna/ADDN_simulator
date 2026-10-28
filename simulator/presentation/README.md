@@ -39,9 +39,10 @@ objects or trial assignments. A rejected hypothetical assignment is not an
 output of the counting engine. A finite checked example is not a general proof.
 
 The complexity clips do not implement a general coNP recognition solver.
-In the path-prefix construction, grouped nodes stand for entire fibers; they
-must not be read as one physical agent each. The proof notes record these
-distinctions and the generator asserts the numerical claims shown.
+Fiber diagrams use one node for an entire history class. In the path-prefix
+clip, the nodes are physical agents of group 0; the other three groups are
+omitted and explicitly noted. The proof notes record these distinctions and
+the generator asserts the numerical claims shown.
 
 ## Reproduce the checks
 
