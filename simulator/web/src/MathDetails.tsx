@@ -48,7 +48,7 @@ export default function MathDetails({ audit, round, variant, ell, nodes, visible
   const next = nextTest && <p className="math-next-test"><span>Next {nextTest.kind === 'all-leaders' ? 'all-leader test' : 'candidate'}</span><strong>m = {nextTest.candidate} · round {nextTest.round}</strong></p>;
 
   return <div className="math-audit" data-kind={details.kind}>
-    <p className="math-context">Known leaders ℓ = {ell}<span aria-hidden="true"> · </span>Visible nodes: {visibleNodes.length}</p>
+    <p className="math-context">Core algorithm · §4.1<br />Known leaders ℓ = {ell}<span aria-hidden="true"> · </span>Visible nodes: {visibleNodes.length}</p>
     {details.kind === 'waiting' ? <div className="math-waiting">
       <p className="math-summary">{details.summary}</p>
       {next}

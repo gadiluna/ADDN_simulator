@@ -21,6 +21,18 @@ function allVerticesReachable(n: number, edges: Edge[]): boolean {
   return true;
 }
 
+test('every preset uses core and importing a legacy sharp topology preserves its data without mutating it', () => {
+  for (const preset of presets) expect(preset.scenario.variant, preset.id).toBe('core');
+  const legacy: Scenario = { ...structuredClone(presets[0].scenario), variant: 'sharp', seed: '9007199254740993123456789' };
+  legacy.rounds[0].edges[0].multiplicity = '9007199254740993123456789';
+  const original = structuredClone(legacy);
+  const expected = { ...original, variant: 'core' };
+  expect(validateScenario(legacy)).toEqual(expected);
+  expect(validateScenario({ scenario: legacy, diagnostics: { variant: 'sharp' } })).toEqual(expected);
+  expect(legacy).toEqual(original);
+  expect(() => validateScenario({ ...legacy, variant: 'unknown' })).toThrow(/variant/);
+});
+
 for (const n of [1, 2, 12, 128]) {
   test(`seeded random network is reproducible and connected in every round for n=${n}`, () => {
     const seed = '9007199254740993123456789';
@@ -28,7 +40,7 @@ for (const n of [1, 2, 12, 128]) {
     expect(scenario).toEqual(randomScenario(n, seed));
     expect(scenario.n).toBe(n);
     expect(scenario.seed).toBe(seed);
-    expect(scenario.variant).toBe('sharp');
+    expect(scenario.variant).toBe('core');
     expect(scenario.leaders.length).toBeGreaterThan(0);
     expect(scenario.rounds.length).toBeGreaterThan(0);
     expect(validateScenario(JSON.parse(JSON.stringify(scenario)))).toEqual(scenario);
@@ -38,20 +50,20 @@ for (const n of [1, 2, 12, 128]) {
   });
 }
 
-test('random generation changes with its seed, preserves the chosen schedule, and rejects invalid populations', () => {
+test('random generation changes with its seed, uses the core schedule, and rejects invalid populations', () => {
   expect(randomScenario(12, '1729').rounds).not.toEqual(randomScenario(12, '1730').rounds);
-  expect(randomScenario(12, '1729', 'core').variant).toBe('core');
+  expect(randomScenario(12, '1729').variant).toBe('core');
   for (const n of [0, 129, 1.5, Number.NaN]) expect(() => randomScenario(n, '1729')).toThrow('integer from 1 to 128');
   const topology = randomScenario(12, '1729').rounds;
   for (const count of [1, 3, 12]) {
-    const scenario = randomScenario(12, '1729', 'sharp', count);
+    const scenario = randomScenario(12, '1729', count);
     expect(scenario.leaders).toHaveLength(count);
     expect(scenario.rounds).toEqual(topology);
-    expect(scenario).toEqual(randomScenario(12, '1729', 'sharp', count));
+    expect(scenario).toEqual(randomScenario(12, '1729', count));
     expect(validateScenario(scenario)).toEqual(scenario);
   }
-  expect(randomScenario(1, '1729', 'sharp', 1).leaders).toEqual([0]);
-  for (const count of [0, 13, 1.5, Number.NaN]) expect(() => randomScenario(12, '1729', 'sharp', count)).toThrow('Leader count must be an integer');
+  expect(randomScenario(1, '1729', 1).leaders).toEqual([0]);
+  for (const count of [0, 13, 1.5, Number.NaN]) expect(() => randomScenario(12, '1729', count)).toThrow('Leader count must be an integer');
 });
 
 test('both lower-bound presets reproduce the independent appendix fixtures including the final cycle', () => {
@@ -61,11 +73,11 @@ test('both lower-bound presets reproduce the independent appendix fixtures inclu
     cwd: fixtureDirectory,
     encoding: 'utf8',
   })) as Scenario[];
-  const ignoreDisplayName = ({ name: _name, ...scenario }: Scenario) => scenario;
+  const coreTopology = ({ name: _name, variant: _variant, ...scenario }: Scenario) => scenario;
   for (const [index, id] of ['lower-bound', 'lower-bound-companion'].entries()) {
     const scenario = presets.find(preset => preset.id === id)?.scenario;
     expect(scenario, `Missing ${id} preset`).toBeDefined();
-    expect(ignoreDisplayName(scenario!)).toEqual(ignoreDisplayName(reference[index]));
+    expect(coreTopology(scenario!)).toEqual(coreTopology(reference[index]));
     expect(validateScenario(scenario)).toEqual(scenario);
     const final = scenario!.rounds.at(-1)!.edges;
     expect(final).toHaveLength(scenario!.n);

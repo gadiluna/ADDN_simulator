@@ -38,7 +38,8 @@ test('scenario editor validates data and exported JSON can be reimported', async
   await json.fill('{"schema_version": 2}');
   await page.getByRole('button', { name: 'Apply scenario' }).click();
   await expect(page.getByRole('alert').filter({ hasText: 'schema_version must be 1' })).toBeVisible();
-  await json.fill(JSON.stringify(presets[3].scenario));
+  await expect(page.locator('.editor-hint')).toContainText('Imported networks run the core algorithm (§4.1).');
+  await json.fill(JSON.stringify({ ...presets[3].scenario, variant: 'sharp' }));
   await page.getByRole('button', { name: 'Apply scenario' }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
   const picker = page.getByRole('combobox', { name: 'Example scenario' });
@@ -50,6 +51,7 @@ test('scenario editor validates data and exported JSON can be reimported', async
   expect(download.suggestedFilename()).toBe('counting-scenario.json');
   const path = await download.path();
   if (!path) throw new Error('The scenario download was not saved.');
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toEqual(presets[3].scenario);
   await page.getByLabel('Import scenario file').setInputFiles(path);
   await expect(picker.locator('option:checked')).toHaveText('One agent, no edges');
   await page.getByLabel('Import scenario file').setInputFiles({ name: 'replay.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ scenario: presets[1].scenario })) });
@@ -128,7 +130,7 @@ test('random population controls fit on mobile', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: `${artifacts}/random-mobile.png`, animations: 'disabled' });
   if (engineBuilt) {
-    for (let round = 1; round <= 3; round++) {
+    for (let round = 1; round <= 5; round++) {
       await page.getByRole('button', { name: 'Advance one round' }).click();
       await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));
     }
@@ -229,7 +231,7 @@ test('a finite sequence ends as incomplete without requesting a nonexistent roun
   await expect(page.getByRole('alert')).not.toBeVisible();
 });
 
-test('playback completes both imported schedules and restart clears the timeline', async ({ page }) => {
+test('playback uses core for presets and legacy imports, exports core traces, and restarts cleanly', async ({ page }) => {
   test.skip(!engineBuilt, 'Build the actual C/WebAssembly engine.');
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -240,16 +242,43 @@ test('playback completes both imported schedules and restart clears the timeline
   await page.getByRole('button', { name: 'Options', exact: true }).click();
   await page.getByRole('button', { name: 'Play execution' }).click();
   await expect(page.getByText('COMPLETE', { exact: true })).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByTestId('round-number')).toHaveText('10');
+  await expect(page.getByTestId('round-number')).toHaveText('11');
   await inspectAgent(page);
   await expect(page.locator('.output-value')).toHaveText('6');
-  const coreScenario = { ...structuredClone(presets[0].scenario), variant: 'core' };
-  await page.getByLabel('Import scenario file').setInputFiles({ name: 'core.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(coreScenario)) });
+  const legacyScenario = { ...structuredClone(presets[0].scenario), variant: 'sharp' };
+  await page.getByLabel('Import scenario file').setInputFiles({ name: 'legacy-sharp.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(legacyScenario)) });
   await expect(page.locator('.engine-status')).toHaveText('Ready');
+  const notice = page.getByRole('status').filter({ hasText: 'Imported network now runs the core algorithm (§4.1).' });
+  await expect(notice).toBeVisible();
+  await page.getByRole('button', { name: 'Dismiss import notice' }).click();
+  await expect(notice).toHaveCount(0);
   await expect(page.getByTestId('round-number')).toHaveText('00');
   await page.getByRole('button', { name: 'Play execution' }).click();
   await expect(page.getByText('COMPLETE', { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('round-number')).toHaveText('11');
+  const exportDownload = page.waitForEvent('download');
+  await optionAction(page, 'Export recorded trace');
+  const tracePath = await (await exportDownload).path();
+  if (!tracePath) throw new Error('The recorded trace was not saved.');
+  const trace = JSON.parse(readFileSync(tracePath, 'utf8'));
+  expect(trace.scenario).toEqual({ ...legacyScenario, variant: 'core' });
+  expect(trace.snapshots).toHaveLength(12);
+  for (const snapshot of trace.snapshots) {
+    expect(snapshot.variant).toBe('core');
+    expect(snapshot.complete).toBe(snapshot.round === 11);
+    for (const agent of snapshot.agents) {
+      expect(agent.halted).toBe(snapshot.round === 11);
+      if (snapshot.round >= 3 && snapshot.round % 2 === 1) {
+        expect(agent.audit.candidate).toBe((snapshot.round + 1) / 2);
+        expect(agent.audit.final_level).toBe(agent.audit.candidate);
+      } else expect(agent.audit.status).toBe('idle');
+    }
+  }
+  const scenarioDownload = page.waitForEvent('download');
+  await optionAction(page, 'Export scenario');
+  const scenarioPath = await (await scenarioDownload).path();
+  if (!scenarioPath) throw new Error('The scenario was not saved.');
+  expect(JSON.parse(readFileSync(scenarioPath, 'utf8'))).toEqual(trace.scenario);
   await page.getByRole('button', { name: 'Restart execution' }).click();
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   await expect(page.getByTestId('round-number')).toHaveText('00');
@@ -293,7 +322,7 @@ test('inspected history follows new rounds and preserves manual camera controls'
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   await inspectAgent(page);
   const history = page.getByRole('img', { name: 'Local history view graph' });
-  for (let round = 1; round <= 3; round++) {
+  for (let round = 1; round <= 5; round++) {
     await page.getByRole('button', { name: 'Advance one round' }).click();
     await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));
   }

@@ -5,7 +5,7 @@ test('the production site loads its engine and completes a run under the Pages p
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('./');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
-  for (let round = 1; round <= 10; round++) {
+  for (let round = 1; round <= 11; round++) {
     await page.getByRole('button', { name: 'Advance one round', exact: true }).click();
     await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));
   }
@@ -15,6 +15,10 @@ test('the production site loads its engine and completes a run under the Pages p
   await expect(page.getByRole('separator', { name: 'Resize network and agent panels' })).toBeVisible();
   await page.getByText('Mathematical details', { exact: true }).click();
   await expect(page.locator('.math-step[data-status="passed"]')).toHaveCount(5);
+  await expect(page.locator('.math-step-title')).toHaveText([
+    'Check the visible structure', 'Choose the anchor', 'Solve the anchor',
+    'Propagate backward', 'Check the suffix',
+  ]);
   const notices = await page.request.get('licenses/index.html');
   expect(notices.ok()).toBe(true);
   expect(await notices.text()).toContain('GMP');

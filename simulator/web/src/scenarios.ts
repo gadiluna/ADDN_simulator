@@ -60,7 +60,7 @@ function lowerBoundPair(): [Scenario, Scenario] {
   left.push({ edges: orderedCycleEdges([x, 0, y, ...leftRelays]) });
   right.push({ edges: orderedCycleEdges([x, 0, 2, yp, ...rightRelays]) });
   const scenario = (order: number, rounds: Scenario['rounds']): Scenario => ({
-    schema_version: 1, name: `Lower bound · ${order} agents`, variant: 'sharp',
+    schema_version: 1, name: `Lower bound · ${order} agents`, variant: 'core',
     n: order, leaders: [...leaders], rounds, repeat_last: true,
   });
   return [scenario(n, left), scenario(n + ell - 1, right)];
@@ -71,7 +71,7 @@ const [lowerBound, lowerBoundCompanion] = lowerBoundPair();
 export const presets: { id: string; name: string; note: string; tag: string; scenario: Scenario }[] = [
   {
     id: 'cycle', name: 'Alternating', note: 'Direction reverses every round.', tag: '06 AGENTS',
-    scenario: { schema_version: 1, name: 'Alternating', variant: 'sharp', n: 6, leaders: [0, 3], rounds: Array.from({ length: 16 }, (_, i) => ({ edges: cycleEdges(6, i % 2 === 1) })), repeat_last: true, seed: '1' },
+    scenario: { schema_version: 1, name: 'Alternating', variant: 'core', n: 6, leaders: [0, 3], rounds: Array.from({ length: 16 }, (_, i) => ({ edges: cycleEdges(6, i % 2 === 1) })), repeat_last: true, seed: '1' },
   },
   {
     id: 'path', name: 'Bidirected path', note: 'Information travels one hop at a time.', tag: '07 AGENTS',
@@ -79,11 +79,11 @@ export const presets: { id: string; name: string; note: string; tag: string; sce
   },
   {
     id: 'star', name: 'Rotating hub', note: 'The centre changes, the system stays connected.', tag: '08 AGENTS',
-    scenario: { schema_version: 1, name: 'Rotating hub', variant: 'sharp', n: 8, leaders: [0, 4], rounds: Array.from({ length: 18 }, (_, r) => ({ edges: Array.from({ length: 8 }, (_, i) => i === r % 8 ? [] : [{ source: r % 8, target: i, multiplicity: '1' }, { source: i, target: r % 8, multiplicity: '1' }]).flat() })), repeat_last: true },
+    scenario: { schema_version: 1, name: 'Rotating hub', variant: 'core', n: 8, leaders: [0, 4], rounds: Array.from({ length: 18 }, (_, r) => ({ edges: Array.from({ length: 8 }, (_, i) => i === r % 8 ? [] : [{ source: r % 8, target: i, multiplicity: '1' }, { source: i, target: r % 8, multiplicity: '1' }]).flat() })), repeat_last: true },
   },
   {
     id: 'singleton', name: 'One agent, no edges', note: 'The smallest possible counting problem.', tag: '01 AGENT',
-    scenario: { schema_version: 1, name: 'One agent, no edges', variant: 'sharp', n: 1, leaders: [0], rounds: [{ edges: [] }], repeat_last: true },
+    scenario: { schema_version: 1, name: 'One agent, no edges', variant: 'core', n: 1, leaders: [0], rounds: [{ edges: [] }], repeat_last: true },
   },
   {
     id: 'lower-bound', name: lowerBound.name!, note: 'Appendix construction; observer 1 matches the companion through round 9.', tag: '06 AGENTS',
@@ -96,10 +96,9 @@ export const presets: { id: string; name: string; note: string; tag: string; sce
 ];
 
 /** A seeded dynamic multigraph: a shuffled directed cycle guarantees connectivity. */
-export function randomScenario(n: number, seed: string, variant: Scenario['variant'] = 'sharp', leaderCount = 1): Scenario {
+export function randomScenario(n: number, seed: string, leaderCount = 1): Scenario {
   if (!Number.isInteger(n) || n < 1 || n > 128) throw new Error('Agent count must be an integer from 1 to 128.');
   if (!Number.isInteger(leaderCount) || leaderCount < 1 || leaderCount > n) throw new Error('Leader count must be an integer from 1 to the number of agents.');
-  if (variant !== 'core' && variant !== 'sharp') throw new Error('variant must be "core" or "sharp".');
   // FNV-1a seed hashing and Mulberry32 use only specified 32-bit operations.
   let state = 2166136261;
   for (let i = 0; i < seed.length; i++) state = Math.imul(state ^ seed.charCodeAt(i), 16777619) >>> 0;
@@ -132,7 +131,7 @@ export function randomScenario(n: number, seed: string, variant: Scenario['varia
     [leaderOrder[i], leaderOrder[j]] = [leaderOrder[j], leaderOrder[i]];
   }
   return {
-    schema_version: 1, name: `Random · ${n} agent${n === 1 ? '' : 's'}`, variant,
+    schema_version: 1, name: `Random · ${n} agent${n === 1 ? '' : 's'}`, variant: 'core',
     n, leaders: leaderOrder.slice(0, leaderCount).sort((a, b) => a - b), rounds, repeat_last: true, seed,
   };
 }
@@ -140,7 +139,9 @@ export function randomScenario(n: number, seed: string, variant: Scenario['varia
 function fail(message: string): never { throw new Error(message); }
 function record(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 
-/** Validate only the scenario. Simulation results are never inferred from the input. */
+/** Validate a network for the core-only viewer, including legacy sharp inputs.
+ * Recorded results are discarded: the C engine produces a fresh core execution.
+ */
 export function validateScenario(input: unknown): Scenario {
   // Native failure bundles may contain the original scenario alongside diagnostics.
   const data = record(input) && 'scenario' in input ? input.scenario : input;
@@ -176,7 +177,7 @@ export function validateScenario(input: unknown): Scenario {
     }
     return { edges };
   });
-  return { schema_version: 1, variant: data.variant, n, leaders: [...data.leaders] as number[], rounds, repeat_last: data.repeat_last, ...(typeof data.name === 'string' ? { name: data.name } : {}), ...(typeof data.seed === 'string' ? { seed: data.seed } : {}) };
+  return { schema_version: 1, variant: 'core', n, leaders: [...data.leaders] as number[], rounds, repeat_last: data.repeat_last, ...(typeof data.name === 'string' ? { name: data.name } : {}), ...(typeof data.seed === 'string' ? { seed: data.seed } : {}) };
 }
 
 export function graphAt(scenario: Scenario, round: number): Edge[] {

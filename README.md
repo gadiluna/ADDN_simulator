@@ -2,7 +2,8 @@
 
 [Open the simulator](https://gadiluna.github.io/ADDN_simulator/)
 
-An interactive simulator for counting in anonymous dynamic directed networks.
+An interactive simulator for the core counting algorithm (§4.1 of the paper)
+in anonymous dynamic directed networks.
 The browser runs the exact C engine through WebAssembly, with GMP arithmetic
 inside a Web Worker.
 

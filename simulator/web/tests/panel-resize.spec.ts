@@ -74,7 +74,7 @@ test('dragging the divider resizes both graphs, preserves the split, and respect
 
   // The completion badge must not push controls or collapse the recorded timeline
   // when the network is narrowed to its smallest supported panel width.
-  for (let round = 1; round <= 10; round++) {
+  for (let round = 1; round <= 11; round++) {
     await page.getByRole('button', { name: 'Advance one round', exact: true }).click();
     await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));
   }

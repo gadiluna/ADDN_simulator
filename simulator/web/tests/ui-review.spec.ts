@@ -13,7 +13,7 @@ test('random controls remain usable at 320 CSS pixels', async ({ page }) => {
   await page.getByRole('spinbutton', { name: 'Number of leaders' }).fill('3');
   await page.getByRole('button', { name: 'Generate random network' }).click();
   await expect(page.locator('.engine-status')).toHaveText('Ready');
-  for (let round = 1; round <= 3; round++) {
+  for (let round = 1; round <= 5; round++) {
     await page.getByRole('button', { name: 'Advance one round' }).click();
     await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));
   }
@@ -29,12 +29,14 @@ test('Space opens and closes disclosures without starting playback', async ({ pa
   await expect(page.locator('.math-details')).toHaveAttribute('open', '');
   await expect(page.getByRole('button', { name: 'Play execution', exact: true })).toBeVisible();
   await expect(page.locator('.math-waiting')).toBeVisible();
-  for (let round = 1; round <= 4; round++) {
+  for (let round = 1; round <= 5; round++) {
     await page.getByRole('button', { name: 'Advance one round' }).click();
     await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));
   }
   const structure = page.locator('.math-step[data-step="1"]');
   const check = structure.locator('summary');
+  // Core's earlier m=2 rejection may have automatically opened this section.
+  if (await structure.getAttribute('open') !== null) await check.click();
   await check.press('Space');
   await expect(structure).toHaveAttribute('open', '');
   await expect(structure.locator('.math-step-evidence')).toBeVisible();
@@ -43,7 +45,7 @@ test('Space opens and closes disclosures without starting playback', async ({ pa
   await expect(structure).not.toHaveAttribute('open');
   await math.press('Space');
   await expect(page.locator('.math-details')).not.toHaveAttribute('open');
-  await expect(page.getByTestId('round-number')).toHaveText('04');
+  await expect(page.getByTestId('round-number')).toHaveText('05');
   // Playback shortcuts still work when a graph, rather than a control, has focus.
   const graph = page.getByRole('img', { name: 'Directed communication network' });
   await graph.press('Space');
@@ -55,7 +57,7 @@ test('Space opens and closes disclosures without starting playback', async ({ pa
 test('secondary graph and mathematical text meets normal-text contrast', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
-  for (let round = 1; round <= 10; round++) {
+  for (let round = 1; round <= 11; round++) {
     await page.getByRole('button', { name: 'Advance one round' }).click();
     await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));
   }

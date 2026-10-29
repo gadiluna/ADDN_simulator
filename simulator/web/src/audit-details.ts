@@ -245,7 +245,8 @@ export function buildAuditDetails(input: AuditDetailsInput): AuditDetails {
   }
 
   const failure = audit.status === 'accepted' ? 6 : reasonStep[audit.reason] ?? 1;
-  const titles = ['Structure', 'Latest flat level', 'Anchor equations', 'Backward propagation', 'Black descendants'];
+  // Step names from the paper, §4.1, in the same order as the C audit.
+  const titles = ['Check the visible structure', 'Choose the anchor', 'Solve the anchor', 'Propagate backward', 'Check the suffix'];
   details.steps = titles.map((title, index) => ({ number: (index + 1) as AuditStep['number'], title, status: index + 1 < failure ? 'passed' : index + 1 === failure ? 'failed' : 'not-reached', summary: index + 1 > failure ? 'Not reached after the earlier rejection.' : '', witness: null, evidence: [] }));
   const [structureStep, anchorStep, solveStep, backwardStep, suffixStep] = details.steps;
   const m = BigInt(candidate ?? 0);

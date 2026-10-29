@@ -18,24 +18,28 @@ async function openStep(page: Page, step: number) {
   return section;
 }
 
-test('waiting, the initial leader test, and five-step rejection have distinct evidence', async ({ page }) => {
+test('core waits for 2m−1, then exposes the five paper checks and the exact rejection', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   await inspect(page);
   await expect(page.locator('.math-waiting')).toBeVisible();
-  await expect(page.locator('.math-next-test')).toContainText('round 2');
+  await expect(page.locator('.math-next-test')).toContainText('round 3');
   await expect(page.locator('.math-step')).toHaveCount(0);
 
   await advance(page, 1, 2);
-  await expect(page.locator('.math-special')).toBeVisible();
-  await expect(page.locator('.math-verdict')).toContainText(/nonleader|non-leader/i);
-  await expect(page.locator('.math-step')).toHaveCount(0);
-  await expect(page.locator('.math-next-test')).toContainText('round 4');
-
-  await advance(page, 3, 3);
   await expect(page.locator('.math-waiting')).toBeVisible();
   await expect(page.locator('.math-special')).toHaveCount(0);
+  await expect(page.locator('.math-next-test')).toContainText('round 3');
+  await advance(page, 3, 3);
+  await expect(page.locator('.math-step[data-step="1"]')).toHaveAttribute('data-status', 'failed');
+  await expect(page.locator('.math-step-title')).toHaveText([
+    'Check the visible structure', 'Choose the anchor', 'Solve the anchor',
+    'Propagate backward', 'Check the suffix',
+  ]);
+  await expect(page.locator('.math-next-test')).toContainText('round 5');
   await advance(page, 4, 4);
+  await expect(page.locator('.math-waiting')).toBeVisible();
+  await advance(page, 5, 5);
   const statuses = await page.locator('.math-step').evaluateAll(steps => steps.map(step => step.getAttribute('data-status')));
   expect(statuses).toEqual(['passed', 'passed', 'failed', 'not-reached', 'not-reached']);
   await expect(page.locator('.math-step[data-step="3"]')).toHaveAttribute('open', '');
@@ -51,7 +55,7 @@ test('waiting, the initial leader test, and five-step rejection have distinct ev
 test('accepted candidate exposes the separate total, backward checks and descendant inequalities', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
-  await advance(page, 1, 10);
+  await advance(page, 1, 11);
   await inspect(page);
   await expect(page.locator('.math-step[data-status="passed"]')).toHaveCount(5);
   await expect(page.locator('.math-next-test')).toHaveCount(0);
@@ -71,10 +75,10 @@ test('accepted candidate exposes the separate total, backward checks and descend
     await expect(row).toContainText('1 ≤ 2');
     await expect(row).toContainText('Passed');
   }
-  await expect(page.locator('.math-step[data-step="5"]')).toContainText('L_5');
+  await expect(page.locator('.math-step[data-step="5"]')).toContainText('L_6');
   await expect(page.locator('.math-step[data-step="5"]')).toContainText(/itself/);
-  await anchor.getByRole('button', { name: 'Inspect history node v15', exact: true }).first().click();
-  await expect(page.getByRole('heading', { name: 'History node v15', exact: true })).toBeInViewport();
+  await anchor.getByRole('button', { name: 'Inspect history node v18', exact: true }).first().click();
+  await expect(page.getByRole('heading', { name: 'History node v18', exact: true })).toBeInViewport();
 
   await page.setViewportSize({ width: 320, height: 740 });
   // Keep row identities stable while closing them changes the set of open rows.
@@ -107,16 +111,18 @@ test('a structural rejection identifies the actual level, count and limit', asyn
   await expect(page.locator('.math-descendants')).toHaveCount(0);
 });
 
-test('all-leaders acceptance has no fictitious five-step audit', async ({ page }) => {
+test('the singleton runs the full core audit at round one', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('combobox', { name: 'Example scenario' }).selectOption('singleton');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   await advance(page, 1, 1);
   await inspect(page);
-  await expect(page.locator('.math-special')).toBeVisible();
-  await expect(page.locator('.math-special')).toContainText('Passed');
-  await expect(page.locator('.math-special')).toContainText(/nonleader.*0/i);
-  await expect(page.locator('.math-step')).toHaveCount(0);
+  await expect(page.locator('.math-special')).toHaveCount(0);
+  await expect(page.locator('.math-step[data-status="passed"]')).toHaveCount(5);
   await expect(page.locator('.math-next-test')).toHaveCount(0);
   await expect(page.locator('.output-value')).toHaveText('1');
+  await expect(page.locator('.math-metadata')).toContainText('Candidate m1');
+  const suffix = await openStep(page, 5);
+  await expect(suffix).toContainText('1 ≤ 1');
+  await expect(suffix).toContainText('L_1');
 });

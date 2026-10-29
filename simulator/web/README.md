@@ -1,6 +1,6 @@
 # Counting Lab
 
-An interactive observer for the native exact C simulator. The React interface never substitutes a JavaScript counting implementation for the WebAssembly engine.
+An interactive observer for the core algorithm in §4.1 of the paper, backed by the native exact C simulator. The React interface never substitutes a JavaScript counting implementation for the WebAssembly engine.
 
 ## Run locally
 
@@ -21,6 +21,15 @@ npm test
 Browser tests use Playwright Chromium. Run `npx playwright install chromium` if a browser is not installed. Engine-dependent tests report a skip when the generated WebAssembly files are absent; they run against the real engine whenever it is available.
 
 ## Explore an execution
+
+The interactive simulator runs only the core algorithm: candidate `m ≥ ℓ` is
+tested at round `2m − 1` on the prefix through level `m`. All agents halt at
+`2n − 1`, including networks where every agent is a leader. The mathematical
+panel uses the five step names from §4.1. All presets and random networks use
+this schedule. Legacy `sharp` scenarios and native bundles retain their topology,
+leaders and seed on import, but run a fresh core execution; exported scenarios
+and traces record `variant: "core"`. Native research tools and the separate
+recorded presentation examples retain their original variants.
 
 - Select an example or import a version-1 scenario / native failure bundle containing `scenario`.
 - Examples include Alternating, Rotating hub, and the appendix lower-bound pair

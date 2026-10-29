@@ -24,6 +24,29 @@ async function runWorker(page: Page, requests: EngineRequest[]): Promise<EngineR
   }, requests);
 }
 
+for (const leaders of [[0], [0, 1], [0, 1, 2]]) {
+  test(`the worker forces core for legacy input with ${leaders.length} leaders and halts at 2n−1`, async ({ page }) => {
+    test.skip(!engineBuilt, 'Build the actual C/WebAssembly engine.');
+    const scenario: Scenario = { ...randomScenario(3, 'core-schedule'), variant: 'sharp', leaders };
+    const responses = await runWorker(page, [
+      { id: 0, command: 'load', scenario },
+      ...Array.from({ length: 5 }, (_, index): EngineRequest => ({ id: index + 1, command: 'step' })),
+    ]);
+    for (const [round, response] of responses.entries()) {
+      expect(response).toMatchObject({ ok: true, snapshot: { round, variant: 'core', complete: round === 5 } });
+      if (!response.ok || !response.snapshot) throw new Error(`No snapshot at round ${round}.`);
+      for (const agent of response.snapshot.agents) {
+        expect(agent.halted).toBe(round === 5);
+        expect(agent.output).toBe(round === 5 ? 3 : null);
+        if (round >= 2 * leaders.length - 1 && round % 2 === 1) {
+          expect(agent.audit).toMatchObject({ candidate: (round + 1) / 2, final_level: (round + 1) / 2, status: round === 5 ? 'accepted' : 'rejected' });
+          expect(['all_leaders', 'nonleader_visible']).not.toContain(agent.audit.reason);
+        } else expect(agent.audit.status).toBe('idle');
+      }
+    }
+  });
+}
+
 test('the exported heap view stays current when a scenario allocation grows Wasm memory', async ({ page }) => {
   test.skip(!engineBuilt, 'Build the actual C/WebAssembly engine.');
   await page.goto('/');

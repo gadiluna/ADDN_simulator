@@ -40,7 +40,8 @@ function snapshot(engine: ExactModule): Snapshot {
 
 function createRun(engine: ExactModule, scenario: Scenario): number {
   // ccall's string conversion uses the fixed Wasm stack; scenarios can exceed it.
-  const bytes = new TextEncoder().encode(JSON.stringify(scenario));
+  // The interactive simulator implements §4.1, also for legacy sharp networks.
+  const bytes = new TextEncoder().encode(JSON.stringify({ ...scenario, variant: 'core' }));
   const pointer = engine._malloc(bytes.byteLength + 1);
   if (!pointer) throw new Error('Not enough memory to load this scenario.');
   try {

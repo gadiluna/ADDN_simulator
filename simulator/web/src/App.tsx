@@ -61,9 +61,9 @@ function ScenarioEditor({ scenario, onClose, onApply }: { scenario: Scenario; on
   return <dialog ref={dialog} className="scenario-dialog" aria-labelledby="scenario-editor-title" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
     <div className="dialog-header"><div><span className="eyebrow">SCENARIO WORKSPACE</span><h2 id="scenario-editor-title">Make the network your own.</h2></div><button className="icon-button" aria-label="Close scenario editor" onClick={onClose}><Icon name="close" /></button></div>
     <div className="editor-tabs"><button className={tab === 'round' ? 'active' : ''} onClick={() => { setTab('round'); setError(''); }}>Round topologies</button><button className={tab === 'json' ? 'active' : ''} onClick={() => { if (edgeText) { saveEdges(); } setTab('json'); }}>Full scenario JSON</button></div>
-    {tab === 'round' ? <div className="round-editor"><div className="round-editor-top"><label>Topology for round <select aria-label="Topology round" value={round} onChange={event => switchRound(Number(event.target.value))}>{roundScenario.rounds.map((_, i) => <option key={i} value={i}>{i + 1}</option>)}</select></label><button className="quiet-button" onClick={() => { try { const current = parse(); current.rounds.push(structuredClone(current.rounds[round])); setText(JSON.stringify(current, null, 2)); switchRound(current.rounds.length - 1); } catch (e) { setError(String(e)); } }}>+ Duplicate topology</button></div><p className="editor-hint">Edit directed edges below. Multiplicities are exact decimal strings. Every round must remain strongly connected.</p><textarea spellCheck={false} aria-label="Round edges JSON" value={edgeText || JSON.stringify(roundScenario.rounds[round].edges, null, 2)} onChange={event => setEdgeText(event.target.value)} /><button className="quiet-button" onClick={saveEdges}>Validate & save this topology</button></div> : <><p className="editor-hint">A scenario or a native counterexample bundle is accepted. Agent IDs start at 0; ℓ is the length of leaders.</p><textarea className="full-json" spellCheck={false} aria-label="Scenario JSON" value={text} onChange={event => setText(event.target.value)} /></>}
+    {tab === 'round' ? <div className="round-editor"><div className="round-editor-top"><label>Topology for round <select aria-label="Topology round" value={round} onChange={event => switchRound(Number(event.target.value))}>{roundScenario.rounds.map((_, i) => <option key={i} value={i}>{i + 1}</option>)}</select></label><button className="quiet-button" onClick={() => { try { const current = parse(); current.rounds.push(structuredClone(current.rounds[round])); setText(JSON.stringify(current, null, 2)); switchRound(current.rounds.length - 1); } catch (e) { setError(String(e)); } }}>+ Duplicate topology</button></div><p className="editor-hint">Edit directed edges below. Multiplicities are exact decimal strings. Every round must remain strongly connected.</p><textarea spellCheck={false} aria-label="Round edges JSON" value={edgeText || JSON.stringify(roundScenario.rounds[round].edges, null, 2)} onChange={event => setEdgeText(event.target.value)} /><button className="quiet-button" onClick={saveEdges}>Validate & save this topology</button></div> : <><p className="editor-hint">Imported networks run the core algorithm (§4.1). Agent IDs start at 0; ℓ is the length of leaders.</p><textarea className="full-json" spellCheck={false} aria-label="Scenario JSON" value={text} onChange={event => setText(event.target.value)} /></>}
     {error && <div className="editor-error" role="alert">{error}</div>}
-    <div className="dialog-footer"><span>Applying a scenario starts a new execution.</span><button className="primary-button" onClick={apply}>Apply scenario <Icon name="arrow" /></button></div>
+    <div className="dialog-footer"><span>Applying starts a new core execution (§4.1).</span><button className="primary-button" onClick={apply}>Apply scenario <Icon name="arrow" /></button></div>
   </dialog>;
 }
 
@@ -86,6 +86,7 @@ export default function App() {
   const [engineReady, setEngineReady] = useState(false);
   const [engineError, setEngineError] = useState('');
   const [importError, setImportError] = useState('');
+  const [importNotice, setImportNotice] = useState('');
   const [editorOpen, setEditorOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -166,18 +167,23 @@ export default function App() {
     return () => window.removeEventListener('keydown', keydown);
   }, [editorOpen, optionsOpen, engineReady, busy, step]);
 
-  const loadScenario = (next: Scenario, id = 'custom') => { setTimeline([]); setCursor(0); setEngineReady(false); setBusy(true); setPlaying(false); setEngineError(''); setScenario(next); setPreset(id); setSelected(next.leaders[0]); setSelectedNode(null); setImportError(''); setEditorOpen(false); setDetailsOpen(false); setOptionsOpen(false); setGuideOpen(false); };
+  const loadScenario = (next: Scenario, id = 'custom') => { setTimeline([]); setCursor(0); setEngineReady(false); setBusy(true); setPlaying(false); setEngineError(''); setScenario(next); setPreset(id); setSelected(next.leaders[0]); setSelectedNode(null); setImportError(''); setImportNotice(''); setEditorOpen(false); setDetailsOpen(false); setOptionsOpen(false); setGuideOpen(false); };
   const generateRandom = () => {
     const n = Number(randomSize);
     const leaders = Number(randomLeaders);
     if (!Number.isInteger(n) || n < 1 || n > 128) return;
     if (!Number.isInteger(leaders) || leaders < 1 || leaders > n) return;
     const seed = crypto.getRandomValues(new Uint32Array(1))[0].toString();
-    loadScenario(randomScenario(n, seed, scenario.variant, leaders), 'random');
+    loadScenario(randomScenario(n, seed, leaders), 'random');
   };
   const importFile = async (file?: File) => {
     if (!file) return;
-    try { if (file.size > 30 * 1024 * 1024) throw new Error('Choose a scenario file smaller than 30 MB.'); loadScenario(validateScenario(JSON.parse(await file.text()))); }
+    try {
+      if (file.size > 30 * 1024 * 1024) throw new Error('Choose a scenario file smaller than 30 MB.');
+      const input = JSON.parse(await file.text());
+      loadScenario(validateScenario(input));
+      if ((input.scenario ?? input).variant === 'sharp') setImportNotice('Imported network now runs the core algorithm (§4.1).');
+    }
     catch (error) { setImportError(error instanceof Error ? error.message : String(error)); }
     if (fileInput.current) fileInput.current.value = '';
   };
@@ -197,7 +203,7 @@ export default function App() {
           const leaders = Number.isInteger(count) && count >= 1 ? Math.min(count, n) : 1;
           setRandomSize(String(n));
           setRandomLeaders(String(leaders));
-          loadScenario(randomScenario(n, crypto.getRandomValues(new Uint32Array(1))[0].toString(), scenario.variant, leaders), 'random');
+          loadScenario(randomScenario(n, crypto.getRandomValues(new Uint32Array(1))[0].toString(), leaders), 'random');
           return;
         }
         const item = presets.find(item => item.id === event.target.value);
@@ -232,6 +238,7 @@ export default function App() {
       </div>
       <input ref={fileInput} className="sr-only" type="file" aria-label="Import scenario file" accept=".json,application/json" onChange={event => void importFile(event.target.files?.[0])} />
     </header>
+    {importNotice && <div className="scenario-notice" role="status">{importNotice}<button className="icon-button" aria-label="Dismiss import notice" onClick={() => setImportNotice('')}><Icon name="close" /></button></div>}
     {importError && <div className="editor-error top-error" role="alert">{importError}<button aria-label="Dismiss error" onClick={() => setImportError('')}><Icon name="close" /></button></div>}
 
     <SplitWorkspace open={detailsOpen}>
@@ -265,6 +272,7 @@ export default function App() {
     </SplitWorkspace>
 
     {guideOpen && <div className="guide-popover" role="dialog" aria-label="Simulation help"><div className="dialog-header"><h2>Help</h2><button className="icon-button" aria-label="Close help" onClick={() => setGuideOpen(false)}><Icon name="close" /></button></div>
+      <p>Core algorithm (§4.1): test m ≥ ℓ at round 2m − 1, using the prefix through L_m. Imported networks use this schedule too.</p>
       <p>Click an agent to see its local view. Drag nodes to move them; scroll or pinch to zoom.</p>
       <div className="help-legend"><span><i className="legend-dot leader" />Leader</span><span><i className="legend-dot" />Agent</span><span><i className="legend-dot halted" />Halted</span><span><i className="legend-line" />Parent</span><span><i className="legend-line red" />Message</span></div>
       <div className="phase-buttons">{phases.map(item => <button key={item.id} className={phase === item.id ? 'active' : ''} onClick={() => setPhase(item.id)}>{item.title}</button>)}</div><p>{phases.find(item => item.id === phase)?.explanation}</p><p className="shortcuts">Space: play / pause · ← / →: previous / next round. Focus the graph and press Enter to inspect; ↑ / ↓ select agents.</p><p><a href={`${import.meta.env.BASE_URL}licenses/index.html`} target="_blank" rel="noreferrer">Third-party licenses</a></p></div>}
