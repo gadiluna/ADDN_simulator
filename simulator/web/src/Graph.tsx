@@ -39,7 +39,7 @@ const style: StylesheetStyle[] = [
   { selector: 'edge.black', style: { 'line-color': '#172033', 'target-arrow-color': '#172033', 'curve-style': 'straight', width: 2.2 } },
   { selector: 'edge.red', style: { 'line-color': '#dc4d50', 'target-arrow-color': '#dc4d50', 'curve-style': 'bezier', width: 1.8, color: '#b91c1c' } },
   { selector: 'edge.silent', style: { opacity: 0.25 } },
-  { selector: 'edge.context-edge', style: { opacity: 0.08, 'text-opacity': 0 } },
+  { selector: 'edge.context-edge', style: { opacity: 0.22, 'text-opacity': 0 } },
 ];
 
 const indexedLabel = (symbol: 'x' | 'v', id: number) => symbol + String(id).replace(/\d/g, digit => '₀₁₂₃₄₅₆₇₈₉'[Number(digit)]);
@@ -101,14 +101,16 @@ export default function Graph(props: GraphProps) {
   const descriptionID = useId();
   const [keyboardActive, setKeyboardActive] = useState(false);
   const [historyCursor, setHistoryCursor] = useState<{ scenario: Scenario; selected: number; id: number } | null>(null);
-  const [allConnections, setAllConnections] = useState(false);
+  // Highlighting is opt-in and belongs to one scenario. A new network always
+  // starts with every arc prominent, even when its first graph is dense.
+  const [highlightedScenario, setHighlightedScenario] = useState<Scenario | null>(null);
   const agent = snapshot?.agents.find(agent => agent.id === selected);
   const visibleIDs = new Set(agent?.visible_nodes);
   const historyNodes = mode === 'view' ? (snapshot?.nodes.filter(node => visibleIDs.has(node.id)) ?? []).sort((a, b) => a.level - b.level || a.id - b.id) : [];
   const historyNode = historyNodes.find(node => historyCursor?.scenario === scenario && historyCursor.selected === selected && node.id === historyCursor.id) ?? historyNodes.find(node => node.id === agent?.bottom) ?? historyNodes[0];
   const edges = snapshot?.graph?.edges ?? graphAt(scenario, snapshot?.round ? snapshot.round - 1 : 0);
   const dense = mode === 'network' && new Set(edges.map(edge => `${edge.source}-${edge.target}`)).size > Math.max(28, scenario.n * 2);
-  const focusConnections = dense && !allConnections;
+  const focusConnections = dense && highlightedScenario === scenario;
   const host = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const cy = useRef<Core | null>(null);
@@ -313,7 +315,8 @@ export default function Graph(props: GraphProps) {
     <span id={`${descriptionID}-help`} className="sr-only">{mode === 'view' ? 'Arrow keys move between history nodes in the vista. Home and End move to the first and last node. Enter opens node details.' : 'Up and Down select an agent. Enter opens agent details. The x labels are observer identifiers, unavailable to the agents.'}</span>
     <span id={`${descriptionID}-node`} className="sr-only" aria-live={keyboardActive ? 'polite' : 'off'} aria-atomic="true">{summary}</span>
     <canvas ref={canvas} className="message-canvas" aria-hidden="true" />
+    {focusConnections && <div className="graph-focus-note" role="status">Connections highlighted: {indexedLabel('x', selected)}</div>}
     {mode === 'view' && !snapshot && <div className="graph-empty">The vista appears when the exact engine is ready.</div>}
-    <div className="graph-tools">{dense && <button aria-label="Show all connections" aria-pressed={allConnections} title={allConnections ? 'Highlight selected agent connections' : 'Show all connections'} onClick={() => setAllConnections(value => !value)}>≋</button>}<button aria-label="Fit graph to view" title="Fit graph to view" onClick={() => { autoFitHistory.current = true; pendingFit.current = true; fitWhenReady.current(); }}>⊡</button><button aria-label="Zoom in" title="Zoom in" onClick={() => { manualCamera(); cy.current?.zoom({ level: Math.min(4, cy.current.zoom() * 1.25), renderedPosition: { x: cy.current.width() / 2, y: cy.current.height() / 2 } }); }}>+</button><button aria-label="Zoom out" title="Zoom out" onClick={() => { manualCamera(); cy.current?.zoom({ level: Math.max(.1, cy.current.zoom() / 1.25), renderedPosition: { x: cy.current.width() / 2, y: cy.current.height() / 2 } }); }}>−</button></div>
+    <div className="graph-tools">{dense && <button aria-label="Highlight selected agent connections" aria-pressed={focusConnections} title={focusConnections ? 'Show all connections equally' : 'Highlight selected agent connections'} onClick={() => setHighlightedScenario(focusConnections ? null : scenario)}>≋</button>}<button aria-label="Fit graph to view" title="Fit graph to view" onClick={() => { autoFitHistory.current = true; pendingFit.current = true; fitWhenReady.current(); }}>⊡</button><button aria-label="Zoom in" title="Zoom in" onClick={() => { manualCamera(); cy.current?.zoom({ level: Math.min(4, cy.current.zoom() * 1.25), renderedPosition: { x: cy.current.width() / 2, y: cy.current.height() / 2 } }); }}>+</button><button aria-label="Zoom out" title="Zoom out" onClick={() => { manualCamera(); cy.current?.zoom({ level: Math.max(.1, cy.current.zoom() / 1.25), renderedPosition: { x: cy.current.width() / 2, y: cy.current.height() / 2 } }); }}>−</button></div>
   </div>;
 }

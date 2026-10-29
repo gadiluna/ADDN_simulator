@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('random controls remain usable at 320 CSS pixels', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto('/');
-  await page.getByRole('combobox', { name: 'Example scenario' }).selectOption('random');
+  await page.getByRole('combobox', { name: 'Dynamic Network' }).selectOption('random');
   for (const control of [
     page.getByRole('spinbutton', { name: 'Number of agents' }),
     page.getByRole('spinbutton', { name: 'Number of leaders' }),

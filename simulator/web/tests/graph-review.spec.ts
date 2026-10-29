@@ -3,6 +3,7 @@ import type { Locator } from '@playwright/test';
 import type { Core } from 'cytoscape';
 import { existsSync } from 'node:fs';
 import { networkPositions } from '../src/graph-layout';
+import { randomScenario } from '../src/scenarios';
 import type { Scenario } from '../src/types';
 
 const engineBuilt = existsSync(new URL('../public/engine.mjs', import.meta.url)) && existsSync(new URL('../public/engine.wasm', import.meta.url));
@@ -15,7 +16,7 @@ async function graphState(graph: Locator) {
     return {
       width: cy.width(), height: cy.height(), zoom: cy.zoom(),
       nodes: cy.nodes().map(node => ({ id: node.id(), label: node.data('label') as string, fill: node.style('background-color'), border: node.style('border-style'), borderColor: node.style('border-color'), designated: node.hasClass('designated'), focused: node.hasClass('focused'), outlineColor: node.style('outline-color'), outlineWidth: node.style('outline-width'), position: node.position(), box: node.renderedBoundingBox({ includeLabels: true, includeOverlays: false, includeUnderlays: false }) })),
-      edges: cy.edges().map(edge => ({ id: edge.id(), source: edge.source().id(), target: edge.target().id(), muted: edge.hasClass('context-edge'), black: edge.hasClass('black'), red: edge.hasClass('red'), label: edge.data('label') as string })),
+      edges: cy.edges().map(edge => ({ id: edge.id(), source: edge.source().id(), target: edge.target().id(), opacity: Number(edge.style('opacity')), muted: edge.hasClass('context-edge'), black: edge.hasClass('black'), red: edge.hasClass('red'), label: edge.data('label') as string })),
     };
   });
 }
@@ -30,6 +31,35 @@ test('every supported population has separated initial node positions', () => {
       minimumDistance = Math.min(minimumDistance, distance);
     }
     expect(minimumDistance, `${n} agents need space for their nodes and focus halos`).toBeGreaterThanOrEqual(72);
+  }
+});
+
+test('random networks keep every arc visible as round density changes', async ({ page }) => {
+  test.skip(!engineBuilt, 'Build the actual C/WebAssembly engine.');
+  const scenario = randomScenario(12, '1', 2);
+  expect(scenario.rounds.some(round => round.edges.length > 28)).toBe(true);
+  expect(scenario.rounds.some(round => round.edges.length <= 28)).toBe(true);
+  await page.goto('/');
+  await page.getByLabel('Import scenario file').setInputFiles({ name: 'dynamic-random.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(scenario)) });
+  await expect(page.locator('.engine-status')).toHaveText('Ready');
+  const graph = page.getByRole('img', { name: 'Directed communication network', exact: true });
+  for (let round = 1; round <= scenario.rounds.length; round++) {
+    await page.getByRole('button', { name: 'Advance one round', exact: true }).click();
+    await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));
+    const expectedEdges = scenario.rounds[round - 1].edges.map(edge => `a${edge.source}->a${edge.target}`).sort();
+    await expect.poll(async () => (await graphState(graph)).edges.map(edge => `${edge.source}->${edge.target}`).sort()).toEqual(expectedEdges);
+    const visible = (await graphState(graph)).edges.filter(edge => edge.opacity === 1);
+    expect(visible.map(edge => `${edge.source}->${edge.target}`).sort(), `Every arc must be prominent by default at round ${round}`).toEqual(expectedEdges);
+    for (const reverse of [false, true]) {
+      const seen = new Set(['a0']);
+      const queue = ['a0'];
+      for (let i = 0; i < queue.length; i++) for (const edge of visible) {
+        const source = reverse ? edge.target : edge.source;
+        const target = reverse ? edge.source : edge.target;
+        if (source === queue[i] && !seen.has(target)) { seen.add(target); queue.push(target); }
+      }
+      expect(seen.size, `Prominent arcs must show a strongly connected graph at round ${round}`).toBe(scenario.n);
+    }
   }
 });
 
@@ -74,14 +104,20 @@ for (const n of [32, 128]) test(`${n} agents fit without overlaps and retain eve
   expect(overlaps).toEqual([]);
   expect(initial.edges).toHaveLength(n * 3);
   expect(initial.edges.find(edge => edge.id === 'e0-1')?.label).toBe('9007199254740993123456790');
-  expect(initial.edges.filter(edge => edge.muted).length).toBeGreaterThan(0);
-  expect(initial.edges.every(edge => edge.muted === (edge.source !== 'a0' && edge.target !== 'a0'))).toBe(true);
-  const showAll = page.getByRole('button', { name: 'Show all connections', exact: true });
-  await showAll.click();
-  await expect(showAll).toHaveAttribute('aria-pressed', 'true');
+  expect(initial.edges.every(edge => !edge.muted && edge.opacity === 1)).toBe(true);
+  const highlight = page.getByRole('button', { name: 'Highlight selected agent connections', exact: true });
+  await expect(highlight).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.graph-focus-note')).toHaveCount(0);
+  await highlight.click();
+  await expect(highlight).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.graph-focus-note')).toHaveText('Connections highlighted: x₀');
+  await expect.poll(async () => (await graphState(graph)).edges.filter(edge => edge.muted).length).toBeGreaterThan(0);
+  expect((await graphState(graph)).edges.every(edge => edge.muted === (edge.source !== 'a0' && edge.target !== 'a0'))).toBe(true);
+  await highlight.click();
+  await expect(highlight).toHaveAttribute('aria-pressed', 'false');
   await expect.poll(async () => (await graphState(graph)).edges.filter(edge => edge.muted).length).toBe(0);
   expect((await graphState(graph)).edges).toHaveLength(initial.edges.length);
-  await showAll.click();
+  await highlight.click();
   await graph.press('ArrowDown');
   await expect.poll(async () => (await graphState(graph)).edges.every(edge => edge.muted === (edge.source !== 'a1' && edge.target !== 'a1'))).toBe(true);
   expect((await graphState(graph)).nodes.map(node => node.position)).toEqual(initial.nodes.map(node => node.position));
@@ -91,7 +127,14 @@ for (const n of [32, 128]) test(`${n} agents fit without overlaps and retain eve
   await page.getByRole('button', { name: 'Fit graph to view', exact: true }).click();
   const narrow = await graphState(graph);
   expect(narrow.nodes.every(node => node.box.x1 >= 0 && node.box.x2 <= narrow.width && node.box.y1 >= 0 && node.box.y2 <= narrow.height)).toBe(true);
-  await expect(showAll).toBeInViewport({ ratio: 1 });
+  await expect(highlight).toBeInViewport({ ratio: 1 });
+
+  // A replacement scenario must not silently inherit an earlier highlighting choice.
+  await page.getByLabel('Import scenario file').setInputFiles({ name: 'replacement.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(scenario)) });
+  if (engineBuilt) await expect(page.locator('.engine-status')).toHaveText('Ready');
+  await expect(highlight).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.graph-focus-note')).toHaveCount(0);
+  await expect.poll(async () => (await graphState(graph)).edges.every(edge => edge.opacity === 1 && !edge.muted)).toBe(true);
 });
 
 test('the vista can be traversed and inspected entirely from the keyboard', async ({ page }) => {
@@ -182,7 +225,7 @@ test('vista labels and leader colors follow the paper while observer facts stay 
   expect(halted.nodes.every(node => node.border === 'double')).toBe(true);
 
   // A zero outdegree is a real observation; the root's level-zero sentinel is not.
-  await page.getByRole('combobox', { name: 'Example scenario' }).selectOption('singleton');
+  await page.getByRole('combobox', { name: 'Dynamic Network' }).selectOption('singleton');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   await page.getByRole('button', { name: 'Advance one round' }).click();
   await expect(page.getByTestId('round-number')).toHaveText('01');
@@ -193,7 +236,7 @@ test('vista labels and leader colors follow the paper while observer facts stay 
 test('lower-bound designation stays green when selection moves and after halting', async ({ page }) => {
   test.skip(!engineBuilt, 'Build the actual C/WebAssembly engine.');
   await page.goto('/');
-  await page.getByRole('combobox', { name: 'Example scenario' }).selectOption('lower-bound');
+  await page.getByRole('combobox', { name: 'Dynamic Network' }).selectOption('lower-bound');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   const network = page.getByRole('img', { name: 'Directed communication network', exact: true });
   const initial = await graphState(network);
@@ -218,7 +261,7 @@ test('lower-bound designation stays green when selection moves and after halting
   await expect(page.getByText('COMPLETE', { exact: true })).toBeVisible();
   expect((await graphState(network)).nodes.find(node => node.id === 'a1')).toMatchObject({ designated: true, border: 'double', borderColor: 'rgb(71,85,105)', outlineColor: 'rgb(21,128,61)', outlineWidth: '3px' });
 
-  await page.getByRole('combobox', { name: 'Example scenario' }).selectOption('cycle');
+  await page.getByRole('combobox', { name: 'Dynamic Network' }).selectOption('cycle');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   const ordinary = await graphState(network);
   expect(ordinary.nodes.every(node => !node.designated)).toBe(true);

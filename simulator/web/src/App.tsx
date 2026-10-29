@@ -198,7 +198,9 @@ export default function App() {
   return <div className="app-shell">
     <header className={`app-header ${preset === 'random' ? 'has-random' : ''}`}>
       <div className="brand"><div className="brand-mark" aria-hidden="true"><svg viewBox="0 0 28 28"><path d="M5 20 14 5l9 15H5Z" /><circle cx="14" cy="5" r="3" /><circle cx="5" cy="20" r="3" /><circle cx="23" cy="20" r="3" /></svg></div><h1>Counting</h1></div>
-      <select className="scenario-picker" aria-label="Example scenario" value={preset} onChange={event => {
+      <div className="network-selector">
+      <label htmlFor="dynamic-network">Dynamic Network<span aria-hidden="true">:</span></label>
+      <select id="dynamic-network" className="scenario-picker" value={preset} onChange={event => {
         if (event.target.value === 'random') {
           const size = Number(randomSize);
           const n = Number.isInteger(size) && size >= 1 && size <= 128 ? size : 12;
@@ -216,6 +218,7 @@ export default function App() {
         <option value="random">Random</option>
         {preset === 'custom' && <option value="custom">{scenario.name || 'Custom network'}</option>}
       </select>
+      </div>
       {preset === 'random' && <form className="random-controls" onSubmit={event => { event.preventDefault(); generateRandom(); }}>
         <label>Agents<input aria-label="Number of agents" type="number" min="1" max="128" step="1" required value={randomSize} onChange={event => {
           setRandomSize(event.target.value);

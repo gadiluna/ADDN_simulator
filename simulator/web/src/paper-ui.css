@@ -44,3 +44,17 @@
 .app-shell .fiber-note p {
   margin: 6px 0 0;
 }
+
+.graph-focus-note {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  max-width: calc(100% - 24px);
+  padding: 5px 8px;
+  border: 1px solid #c7d8ef;
+  border-radius: 5px;
+  background: #eff6ff;
+  color: #2458a3;
+  font-size: 12px;
+  pointer-events: none;
+}

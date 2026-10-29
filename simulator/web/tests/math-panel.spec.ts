@@ -129,7 +129,7 @@ test('a structural rejection identifies the actual level, count and limit', asyn
 
 test('the singleton runs the full core audit at round one', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('combobox', { name: 'Example scenario' }).selectOption('singleton');
+  await page.getByRole('combobox', { name: 'Dynamic Network' }).selectOption('singleton');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   await advance(page, 1, 1);
   await inspect(page);

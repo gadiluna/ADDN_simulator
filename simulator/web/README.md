@@ -66,6 +66,12 @@ automatically stays in frame as it grows until the user moves or zooms
 its camera. Fit restores automatic framing. Opening or closing the inspector
 fits the network to its new available space.
 
+Every network arc is fully visible by default, including when a new round is
+denser. In dense graphs, the optional “Highlight selected agent connections”
+button dims other arcs and displays an explicit highlighting label. Loading a
+different network restores equal visibility for all arcs. Each random round
+contains a directed cycle through every agent, ensuring strong connectivity.
+
 The interactive viewer accepts up to 128 agents. Every topology must be strongly connected. Self-loops and parallel edges are supported; the renderer combines parallel edges using exact integer sums. All multiplicities remain decimal strings during import/export.
 
 ## Correspondence with the paper

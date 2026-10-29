@@ -42,7 +42,7 @@ test('scenario editor validates data and exported JSON can be reimported', async
   await json.fill(JSON.stringify({ ...presets[3].scenario, variant: 'sharp' }));
   await page.getByRole('button', { name: 'Apply scenario' }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
-  const picker = page.getByRole('combobox', { name: 'Example scenario' });
+  const picker = page.getByRole('combobox', { name: 'Dynamic Network' });
   await expect(picker).toHaveValue('custom');
   await expect(picker.locator('option:checked')).toHaveText('One agent, no edges');
   const pending = page.waitForEvent('download');
@@ -63,7 +63,7 @@ test('lower bounds and random networks still run and replay exported scenarios',
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
-  const picker = page.getByRole('combobox', { name: 'Example scenario' });
+  const picker = page.getByRole('combobox', { name: 'Dynamic Network' });
   await expect(picker.locator('option:checked')).toHaveText('Alternating');
   await picker.selectOption('lower-bound');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
@@ -112,7 +112,7 @@ test('lower bounds and random networks still run and replay exported scenarios',
 test('random population controls fit on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.getByRole('combobox', { name: 'Example scenario' }).selectOption('random');
+  await page.getByRole('combobox', { name: 'Dynamic Network' }).selectOption('random');
   const count = page.getByRole('spinbutton', { name: 'Number of agents' });
   const leaders = page.getByRole('spinbutton', { name: 'Number of leaders' });
   const generate = page.getByRole('button', { name: 'Generate random network' });
@@ -193,7 +193,7 @@ test('real engine replays rounds and opens the vista and math only when inspecti
   await page.getByText('Mathematical details', { exact: true }).click();
   await expect(page.locator('.math-waiting')).toBeVisible();
   await expect(page.locator('.math-step')).toHaveCount(0);
-  await page.getByRole('combobox', { name: 'Example scenario' }).selectOption('singleton');
+  await page.getByRole('combobox', { name: 'Dynamic Network' }).selectOption('singleton');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   await expect(page.getByRole('complementary', { name: 'Agent inspector' })).not.toBeVisible();
   await next.click();
