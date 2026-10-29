@@ -91,7 +91,11 @@ to the corresponding vista nodes. The total `m` is checked after solving the
 flow and leader equations; it is not an extra equation used to establish
 uniqueness.
 
-The appendix presets open on the designated leader. Each pair keeps the known
+The appendix presets open on the designated leader. Their network diagrams use
+yellow nonleaders and a persistent green ring for the designated leader, following
+the lower-bound figure. The blue selection highlight can move independently;
+vista colours retain the §3 conventions. Network arc multiplicities use plain
+numeric labels, omitting 1. Each pair keeps the known
 leader count fixed and has identical designated-leader vistas through these
 rounds:
 

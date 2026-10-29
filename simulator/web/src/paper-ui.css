@@ -24,6 +24,15 @@
   height: 12px;
 }
 
+.app-shell .legend-dot.bound-nonleader {
+  background: #fef3c7;
+}
+
+.app-shell .legend-dot.designated {
+  background: #dbeafe;
+  border: 2px solid #15803d;
+}
+
 .app-shell .legend-line {
   border-top: 2px solid #172033;
 }

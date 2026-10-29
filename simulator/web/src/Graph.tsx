@@ -13,14 +13,23 @@ interface GraphProps {
   observer: boolean;
   animate: boolean;
   mode: 'network' | 'view';
+  designatedAgent?: number;
   layoutKey?: string;
   onSelect: (id: number) => void;
   onNodeSelect: (id: number) => void;
 }
 
+// Node outlines are supported by Cytoscape 3.33, but are not yet included in
+// its bundled TypeScript declarations. Keep the paper's designation ring
+// independent of the node border used for selection and halting.
+const designatedOutline = { 'outline-color': '#15803d', 'outline-width': 3, 'outline-offset': 4, 'outline-opacity': 1 };
+
 const style: StylesheetStyle[] = [
   { selector: 'node', style: { 'background-color': '#ffffff', 'border-width': 2, 'border-color': '#64748b', width: 52, height: 52, label: 'data(label)', color: '#172033', 'font-family': 'system-ui, sans-serif', 'font-size': 14, 'font-weight': 600, 'text-valign': 'center', 'text-halign': 'center', 'text-wrap': 'wrap', 'text-max-width': '1000px', 'overlay-opacity': 0, 'text-outline-width': 0 } },
   { selector: 'node.leader', style: { 'background-color': '#dbeafe', 'border-color': '#2563eb', 'border-width': 2.5, color: '#17355c' } },
+  { selector: 'node.lower-bound-nonleader', style: { 'background-color': '#fef3c7' } },
+  { selector: 'node.designated', style: { ...designatedOutline } },
+  { selector: 'node.observer-anonymity', style: { 'font-size': 11 } },
   { selector: 'node.halted', style: { 'border-color': '#475569', 'border-width': 5, 'border-style': 'double' } },
   { selector: 'node.focused', style: { 'border-width': 4, 'border-color': '#2563eb', 'underlay-color': '#2563eb', 'underlay-opacity': 0.1, 'underlay-padding': 9 } },
   { selector: 'node.anchor', style: { 'border-color': '#2563eb', 'border-width': 3 } },
@@ -33,7 +42,9 @@ const style: StylesheetStyle[] = [
   { selector: 'edge.context-edge', style: { opacity: 0.08, 'text-opacity': 0 } },
 ];
 
-function makeElements({ scenario, snapshot, previousSnapshot, selected, observer, mode }: GraphProps, focusConnections: boolean): ElementDefinition[] {
+const indexedLabel = (symbol: 'x' | 'v', id: number) => symbol + String(id).replace(/\d/g, digit => '₀₁₂₃₄₅₆₇₈₉'[Number(digit)]);
+
+function makeElements({ scenario, snapshot, previousSnapshot, selected, observer, mode, designatedAgent }: GraphProps, focusConnections: boolean): ElementDefinition[] {
   if (mode === 'view') {
     if (!snapshot) return [];
     const agent = snapshot.agents.find(a => a.id === selected);
@@ -45,9 +56,9 @@ function makeElements({ scenario, snapshot, previousSnapshot, selected, observer
     for (const level of levels) {
       const row = nodes.filter(n => n.level === level);
       row.forEach((node, i) => elements.push({
-        data: { id: `v${node.id}`, label: node.level < 0 ? 'Root' : `v${node.id}${observer ? `\na=${node.fiber.length}` : ''}` },
+        data: { id: `v${node.id}`, label: node.level < 0 ? 'Root' : `${indexedLabel('v', node.id)}${observer ? `\na(v)=${node.fiber.length}` : ''}` },
         position: { x: (i - (row.length - 1) / 2) * 92, y: level * 100 },
-        classes: [node.leader ? 'leader' : '', node.id === agent.bottom ? 'bottom' : '', node.level === agent.audit.anchor ? 'anchor' : ''].join(' '),
+        classes: [node.leader ? 'leader' : '', observer ? 'observer-anonymity' : '', node.id === agent.bottom ? 'bottom' : '', node.level === agent.audit.anchor ? 'anchor' : ''].join(' '),
       }));
     }
     for (const node of nodes) {
@@ -64,9 +75,9 @@ function makeElements({ scenario, snapshot, previousSnapshot, selected, observer
   const elements: ElementDefinition[] = Array.from({ length: scenario.n }, (_, id) => {
     const a = snapshot?.agents.find(a => a.id === id);
     return {
-      data: { id: `a${id}`, label: `x${id}${observer && a ? `\nv${a.bottom}` : ''}` },
+      data: { id: `a${id}`, label: `${indexedLabel('x', id)}${observer && a ? `\n${indexedLabel('v', a.bottom)}` : ''}` },
       position: layout[id],
-      classes: [scenario.leaders.includes(id) ? 'leader' : '', a?.halted ? 'halted' : '', id === selected ? 'focused' : ''].join(' '),
+      classes: [scenario.leaders.includes(id) ? 'leader' : designatedAgent !== undefined ? 'lower-bound-nonleader' : '', id === designatedAgent ? 'designated' : '', a?.halted ? 'halted' : '', id === selected ? 'focused' : ''].join(' '),
     };
   });
   const edges = snapshot?.graph?.edges ?? graphAt(scenario, snapshot?.round ? snapshot.round - 1 : 0);
@@ -80,13 +91,13 @@ function makeElements({ scenario, snapshot, previousSnapshot, selected, observer
   }
   for (const [key, edge] of grouped) {
     const senderHaltedBeforeRound = previousSnapshot?.agents.find(a => a.id === edge.source)?.halted;
-    elements.push({ data: { id: `e${key}`, source: `a${edge.source}`, target: `a${edge.target}`, label: edge.count === 1n ? '' : `×${edge.count}` }, classes: [senderHaltedBeforeRound ? 'silent' : '', focusConnections && edge.source !== selected && edge.target !== selected ? 'context-edge' : ''].join(' ') });
+    elements.push({ data: { id: `e${key}`, source: `a${edge.source}`, target: `a${edge.target}`, label: edge.count === 1n ? '' : String(edge.count) }, classes: [senderHaltedBeforeRound ? 'silent' : '', focusConnections && edge.source !== selected && edge.target !== selected ? 'context-edge' : ''].join(' ') });
   }
   return elements;
 }
 
 export default function Graph(props: GraphProps) {
-  const { scenario, snapshot, previousSnapshot, selected, observer, mode, layoutKey } = props;
+  const { scenario, snapshot, previousSnapshot, selected, observer, mode, layoutKey, designatedAgent } = props;
   const descriptionID = useId();
   const [keyboardActive, setKeyboardActive] = useState(false);
   const [historyCursor, setHistoryCursor] = useState<{ scenario: Scenario; selected: number; id: number } | null>(null);
@@ -227,7 +238,7 @@ export default function Graph(props: GraphProps) {
       cancelAnimationFrame(fitFrame.current);
       fitFrame.current = requestAnimationFrame(() => fitWhenReady.current());
     }
-  }, [scenario, snapshot, previousSnapshot, selected, observer, mode, layoutKey, focusConnections, keyboardActive, historyNode?.id]);
+  }, [scenario, snapshot, previousSnapshot, selected, observer, mode, layoutKey, designatedAgent, focusConnections, keyboardActive, historyNode?.id]);
 
   useEffect(() => {
     const overlay = canvas.current;

@@ -192,6 +192,7 @@ export default function App() {
   const selectAgent = (id: number) => { setSelected(id); setSelectedNode(null); setDetailsOpen(true); setOptionsOpen(false); };
 
   const finished = (!!current?.complete || exhausted) && cursor === timeline.length - 1;
+  const designatedAgent = presets.find(item => item.id === preset)?.designatedAgent;
   const graphProps = { layoutKey: detailsOpen ? 'inspector' : 'network', scenario, snapshot: current, previousSnapshot: timeline[cursor - 1], selected, observer, onSelect: selectAgent, onNodeSelect: (id: number) => { setSelectedNode(id); setDetailsOpen(true); } };
 
   return <div className="app-shell">
@@ -246,7 +247,7 @@ export default function App() {
     <SplitWorkspace open={detailsOpen}>
       <section className="experiment-panel" aria-label="Simulation workspace">
         <div className="graph-stage">
-          <Graph {...graphProps} animate={engineReady && round > 0 && playing} mode="network" />
+          <Graph {...graphProps} designatedAgent={designatedAgent} animate={engineReady && round > 0 && playing} mode="network" />
           {observer && <div className="observer-banner">Observer knowledge · unavailable to the algorithm</div>}
           {!engineReady && !engineError && <div className="canvas-loading">Loading simulation…</div>}
         </div>
@@ -276,7 +277,8 @@ export default function App() {
     {guideOpen && <div className="guide-popover" role="dialog" aria-label="Simulation help"><div className="dialog-header"><h2>Help</h2><button className="icon-button" aria-label="Close help" onClick={() => setGuideOpen(false)}><Icon name="close" /></button></div>
       <p><PaperText>{'Core algorithm (§4.1): test m ≥ ℓ at round 2m − 1, using the prefix through 𝓛_m. Imported networks use this schedule too.'}</PaperText></p>
       <p>Click an agent to see its vista, shaded green. Drag nodes to move them; scroll or pinch to zoom.</p>
-      <div className="help-legend"><span><i className="legend-dot leader" />Leader</span><span><i className="legend-dot" />Nonleader</span><span><i className="legend-dot halted" />Halted</span><span><i className="legend-line" /><PaperText>{'Black: d_r(v)'}</PaperText></span><span><i className="legend-line red" /><PaperText>{'Red: μ_r(u,v)'}</PaperText></span></div>
+      <div className="help-legend"><span><i className="legend-dot leader" />Leader</span><span><i className="legend-dot" />{designatedAgent === undefined ? 'Nonleader' : 'Vista nonleader'}</span>{designatedAgent !== undefined && <><span><i className="legend-dot bound-nonleader" />Network nonleader</span><span><i className="legend-dot designated" /><PaperText>{`Designated leader x${designatedAgent}`}</PaperText></span></>}<span><i className="legend-dot halted" />Halted</span><span><i className="legend-line" /><PaperText>{'Black: d_r(v)'}</PaperText></span><span><i className="legend-line red" /><PaperText>{'Red: μ_r(u,v)'}</PaperText></span></div>
+      <p>Network edge labels are arc multiplicities; labels equal to 1 are omitted.</p>
       <p><PaperText>{'In the vista, black and red edges point away from the root; labels equal to 1 are omitted. Black edges from the root have no outdegree label.'}</PaperText></p>
       <p><PaperText>{'Labels x0, x1, … identify physical agents only for the observer; v0, v1, … identify history nodes. The observer overlay adds the corresponding node and actual anonymity a(v), with fibre A(v) in node details. These are unavailable to the agents.'}</PaperText></p>
       <div className="phase-buttons">{phases.map(item => <button key={item.id} className={phase === item.id ? 'active' : ''} onClick={() => setPhase(item.id)}>{item.title}</button>)}</div><p><PaperText>{phases.find(item => item.id === phase)?.explanation ?? ''}</PaperText></p><p className="shortcuts">Space: play / pause · ← / →: previous / next round. Focus the graph and press Enter to inspect; ↑ / ↓ select agents.</p><p><a href={`${import.meta.env.BASE_URL}licenses/index.html`} target="_blank" rel="noreferrer">Third-party licenses</a></p></div>}

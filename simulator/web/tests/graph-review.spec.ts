@@ -14,7 +14,7 @@ async function graphState(graph: Locator) {
     const cy = (element as HTMLElement & { _cyreg: { cy: Core } })._cyreg.cy;
     return {
       width: cy.width(), height: cy.height(), zoom: cy.zoom(),
-      nodes: cy.nodes().map(node => ({ id: node.id(), label: node.data('label') as string, fill: node.style('background-color'), border: node.style('border-style'), position: node.position(), box: node.renderedBoundingBox({ includeLabels: true, includeOverlays: false, includeUnderlays: false }) })),
+      nodes: cy.nodes().map(node => ({ id: node.id(), label: node.data('label') as string, fill: node.style('background-color'), border: node.style('border-style'), borderColor: node.style('border-color'), designated: node.hasClass('designated'), focused: node.hasClass('focused'), outlineColor: node.style('outline-color'), outlineWidth: node.style('outline-width'), position: node.position(), box: node.renderedBoundingBox({ includeLabels: true, includeOverlays: false, includeUnderlays: false }) })),
       edges: cy.edges().map(edge => ({ id: edge.id(), source: edge.source().id(), target: edge.target().id(), muted: edge.hasClass('context-edge'), black: edge.hasClass('black'), red: edge.hasClass('red'), label: edge.data('label') as string })),
     };
   });
@@ -73,7 +73,7 @@ for (const n of [32, 128]) test(`${n} agents fit without overlaps and retain eve
   }
   expect(overlaps).toEqual([]);
   expect(initial.edges).toHaveLength(n * 3);
-  expect(initial.edges.find(edge => edge.id === 'e0-1')?.label).toBe('×9007199254740993123456790');
+  expect(initial.edges.find(edge => edge.id === 'e0-1')?.label).toBe('9007199254740993123456790');
   expect(initial.edges.filter(edge => edge.muted).length).toBeGreaterThan(0);
   expect(initial.edges.every(edge => edge.muted === (edge.source !== 'a0' && edge.target !== 'a0'))).toBe(true);
   const showAll = page.getByRole('button', { name: 'Show all connections', exact: true });
@@ -138,11 +138,11 @@ test('vista labels and leader colors follow the paper while observer facts stay 
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   const network = page.getByRole('img', { name: 'Directed communication network', exact: true });
   const initial = await graphState(network);
-  expect(initial.nodes.map(node => node.label)).toEqual(['x0', 'x1', 'x2']);
+  expect(initial.nodes.map(node => node.label)).toEqual(['x₀', 'x₁', 'x₂']);
   expect(initial.nodes[0].fill).toBe('rgb(219,234,254)');
   expect(initial.nodes[1].fill).toBe('rgb(255,255,255)');
   expect(initial.edges.every(edge => !edge.black && !edge.red)).toBe(true);
-  expect(initial.edges.find(edge => edge.source === 'a0')?.label).toBe('×2');
+  expect(initial.edges.find(edge => edge.source === 'a0')?.label).toBe('2');
   await page.getByRole('button', { name: 'Advance one round' }).click();
   await expect(page.getByTestId('round-number')).toHaveText('01');
   await network.press('ArrowDown');
@@ -151,7 +151,7 @@ test('vista labels and leader colors follow the paper while observer facts stay 
   await expect(page.locator('.agent-properties')).toContainText('⊥');
   const vista = page.getByRole('img', { name: 'Vista graph', exact: true });
   const history = await graphState(vista);
-  expect(history.nodes.every(node => node.label === 'Root' || node.label === node.id)).toBe(true);
+  expect(history.nodes.every(node => node.label === 'Root' || /^v[₀-₉]+$/.test(node.label))).toBe(true);
   expect(history.edges.filter(edge => edge.black && edge.label === '2')).toHaveLength(1);
   expect(history.edges.filter(edge => edge.red && edge.label === '2')).toHaveLength(1);
   expect(history.edges.every(edge => ['', '2'].includes(edge.label))).toBe(true);
@@ -170,8 +170,8 @@ test('vista labels and leader colors follow the paper while observer facts stay 
   await expect(page.locator('.fiber-note')).toContainText('Observer only · unavailable to the agent');
   await expect(page.locator('.fiber-note .paper-fiber')).toHaveCount(2);
   await expect(page.locator('.fiber-note .paper-anonymity')).toHaveText('a');
-  expect((await graphState(network)).nodes.every(node => /^x\d+\nv\d+$/.test(node.label))).toBe(true);
-  expect((await graphState(vista)).nodes.every(node => node.label === 'Root' || /^v\d+\na=\d+$/.test(node.label))).toBe(true);
+  expect((await graphState(network)).nodes.every(node => /^x[₀-₉]+\nv[₀-₉]+$/.test(node.label))).toBe(true);
+  expect((await graphState(vista)).nodes.every(node => node.label === 'Root' || /^v[₀-₉]+\na\(v\)=\d+$/.test(node.label))).toBe(true);
   for (let round = 2; round <= 5; round++) {
     await page.getByRole('button', { name: 'Advance one round' }).click();
     await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));
@@ -188,4 +188,39 @@ test('vista labels and leader colors follow the paper while observer facts stay 
   await expect(page.getByTestId('round-number')).toHaveText('01');
   await network.press('Enter');
   expect((await graphState(vista)).edges.filter(edge => edge.black).map(edge => edge.label).sort()).toEqual(['', '0']);
+});
+
+test('lower-bound designation stays green when selection moves and after halting', async ({ page }) => {
+  test.skip(!engineBuilt, 'Build the actual C/WebAssembly engine.');
+  await page.goto('/');
+  await page.getByRole('combobox', { name: 'Example scenario' }).selectOption('lower-bound');
+  await expect(page.locator('.engine-status')).toHaveText('Ready');
+  const network = page.getByRole('img', { name: 'Directed communication network', exact: true });
+  const initial = await graphState(network);
+  expect(initial.nodes.filter(node => node.designated).map(node => node.label)).toEqual(['x₁']);
+  expect(initial.nodes.find(node => node.id === 'a1')).toMatchObject({ focused: true, fill: 'rgb(219,234,254)', outlineColor: 'rgb(21,128,61)', outlineWidth: '3px' });
+  expect(initial.nodes.filter(node => !['a0', 'a1'].includes(node.id)).every(node => node.fill === 'rgb(254,243,199)')).toBe(true);
+
+  await network.press('ArrowDown');
+  await expect(page.getByRole('heading', { name: 'Agent 2', exact: true })).toBeVisible();
+  const selectedOther = await graphState(network);
+  expect(selectedOther.nodes.find(node => node.id === 'a1')).toMatchObject({ designated: true, focused: false, outlineColor: 'rgb(21,128,61)', outlineWidth: '3px' });
+  expect(selectedOther.nodes.find(node => node.id === 'a2')).toMatchObject({ designated: false, focused: true, borderColor: 'rgb(37,99,235)' });
+  const vista = page.getByRole('img', { name: 'Vista graph', exact: true });
+  const history = await graphState(vista);
+  expect(history.nodes.some(node => node.label !== 'Root' && node.fill === 'rgb(255,255,255)')).toBe(true);
+  expect(history.nodes.every(node => !node.designated)).toBe(true);
+
+  for (let round = 1; round <= 11; round++) {
+    await page.getByRole('button', { name: 'Advance one round' }).click();
+    await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));
+  }
+  await expect(page.getByText('COMPLETE', { exact: true })).toBeVisible();
+  expect((await graphState(network)).nodes.find(node => node.id === 'a1')).toMatchObject({ designated: true, border: 'double', borderColor: 'rgb(71,85,105)', outlineColor: 'rgb(21,128,61)', outlineWidth: '3px' });
+
+  await page.getByRole('combobox', { name: 'Example scenario' }).selectOption('cycle');
+  await expect(page.locator('.engine-status')).toHaveText('Ready');
+  const ordinary = await graphState(network);
+  expect(ordinary.nodes.every(node => !node.designated)).toBe(true);
+  expect(ordinary.nodes.find(node => node.id === 'a2')?.fill).toBe('rgb(255,255,255)');
 });
