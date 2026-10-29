@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Graph from './Graph';
 import MathDetails from './MathDetails';
+import PaperText from './PaperText';
 import SplitWorkspace from './SplitWorkspace';
 import { exportJSON, presets, randomScenario, validateScenario } from './scenarios';
 import type { EngineResponse, Phase, Scenario, Snapshot } from './types';
+import './paper-ui.css';
 
 const phases: { id: Phase; number: string; title: string; explanation: string }[] = [
-  { id: 'send', number: '01', title: 'Send', explanation: 'Every active agent broadcasts its previous view on each outgoing edge. All messages use the frozen state at the start of the round.' },
-  { id: 'receive', number: '02', title: 'Receive', explanation: 'Incoming messages form a multiset. Parallel edges preserve multiplicity; the sender’s identity is not part of a message.' },
-  { id: 'view', number: '03', title: 'Refine the view', explanation: 'The previous view, received multiset, and revealed outdegree determine the next history node. Indistinguishable states share a canonical node.' },
-  { id: 'decision', number: '04', title: 'Test & decide', explanation: 'At a scheduled candidate round, the agent runs the five checks. A successful test outputs the candidate and halts; halted agents become silent.' },
+  { id: 'send', number: '01', title: 'Send', explanation: 'In round t, every active agent x broadcasts its previous state s_(t−1)(x), represented by its vista, on each outgoing arc.' },
+  { id: 'receive', number: '02', title: 'Receive', explanation: 'Agent x receives the multiset I_t(x), then learns its outdegree d_t^+(x). Parallel arcs preserve multiplicity; sender identities are unavailable.' },
+  { id: 'view', number: '03', title: 'Update the vista', explanation: 'Match and merge the previous vista with the received vistas, then add the new bottom node, its black parent edge labeled d_t(v), and the red edges labeled μ_t(u,v).' },
+  { id: 'decision', number: '04', title: 'Test & decide', explanation: 'At round 2m − 1, test m ≥ ℓ using the prefix through 𝓛_m. If all five checks pass, output m and halt. Halted agents become silent.' },
 ];
 
 function Icon({ name, size = 18 }: { name: 'play' | 'pause' | 'step' | 'reset' | 'download' | 'upload' | 'code' | 'arrow' | 'close' | 'chevron'; size?: number }) {
@@ -167,7 +169,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', keydown);
   }, [editorOpen, optionsOpen, engineReady, busy, step]);
 
-  const loadScenario = (next: Scenario, id = 'custom') => { setTimeline([]); setCursor(0); setEngineReady(false); setBusy(true); setPlaying(false); setEngineError(''); setScenario(next); setPreset(id); setSelected(next.leaders[0]); setSelectedNode(null); setImportError(''); setImportNotice(''); setEditorOpen(false); setDetailsOpen(false); setOptionsOpen(false); setGuideOpen(false); };
+  const loadScenario = (next: Scenario, id = 'custom') => { setTimeline([]); setCursor(0); setEngineReady(false); setBusy(true); setPlaying(false); setEngineError(''); setScenario(next); setPreset(id); setSelected(presets.find(item => item.id === id)?.designatedAgent ?? next.leaders[0]); setSelectedNode(null); setImportError(''); setImportNotice(''); setEditorOpen(false); setDetailsOpen(false); setOptionsOpen(false); setGuideOpen(false); };
   const generateRandom = () => {
     const n = Number(randomSize);
     const leaders = Number(randomLeaders);
@@ -259,23 +261,25 @@ export default function App() {
       </section>
 
       {detailsOpen && <aside id="agent-inspector" className="inspector-panel" aria-label="Agent inspector">
-        <div className="inspector-title"><h2>Agent {selected}</h2><span className={`agent-type ${scenario.leaders.includes(selected) ? 'leader' : ''}`}>{scenario.leaders.includes(selected) ? 'Leader' : 'Agent'}</span><button className="icon-button" aria-label="Close agent details" onClick={() => setDetailsOpen(false)}><Icon name="close" /></button></div>
+        <div className="inspector-title"><h2>Agent {selected}</h2><span className={`agent-type ${scenario.leaders.includes(selected) ? 'leader' : ''}`}>{scenario.leaders.includes(selected) ? 'Leader' : 'Nonleader'}</span><button className="icon-button" aria-label="Close agent details" onClick={() => setDetailsOpen(false)}><Icon name="close" /></button></div>
         <div className="inspector-content">
-          <div className="local-history"><span className="local-heading">Local view</span><Graph {...graphProps} animate={false} mode="view" /></div>
-          <div className="agent-properties"><div><span>State</span><strong>{agent ? agent.halted ? 'Halted' : 'Active' : 'Not started'}</strong></div><div><span>Output</span><strong className={agent?.output !== null && agent?.output !== undefined ? 'output-value' : ''}>{agent?.output ?? 'Undecided'}</strong></div></div>
+          <div className="local-history"><span className="local-heading"><PaperText>{`Vista 𝓥_${round}`}</PaperText></span><Graph {...graphProps} animate={false} mode="view" /></div>
+          <div className="agent-properties"><div><span>Status</span><strong>{agent ? agent.halted ? 'Halted' : 'Active' : 'Not started'}</strong></div><div><span><PaperText>{`Output o_${round}(x${selected})`}</PaperText></span><strong title={agent?.output == null ? 'No output' : undefined} className={agent?.output !== null && agent?.output !== undefined ? 'output-value' : ''}>{agent?.output ?? '⊥'}</strong></div></div>
           <details className="math-details"><summary>Mathematical details</summary>
             <MathDetails audit={agent?.audit} round={round} variant={scenario.variant} ell={ell} nodes={current?.nodes ?? []} visibleNodes={agent?.visible_nodes ?? []} halted={agent?.halted} onNodeSelect={graphProps.onNodeSelect} />
           </details>
-          {historyNode && <div className="node-inspector"><h3>History node v{historyNode.id}</h3><dl><dt>Level</dt><dd>{historyNode.level}</dd><dt>Type</dt><dd>{historyNode.level < 0 ? 'Root' : historyNode.leader ? 'Leader' : 'Agent'}</dd><dt>Outdegree</dt><dd>{historyNode.level < 0 ? '—' : historyNode.level === 0 ? 'Not observed' : historyNode.outdegree}</dd><dt>Parent</dt><dd>{historyNode.parent === null ? '—' : `v${historyNode.parent}`}</dd></dl>{observer && <div className="fiber-note"><strong>Observer only · true fibre</strong><p>{historyNode.fiber.map(id => `A${id}`).join(', ') || '∅'}</p></div>}</div>}
+          {historyNode && <div className="node-inspector"><h3><PaperText>{`History node v${historyNode.id}`}</PaperText></h3><dl><dt>Level</dt><dd><PaperText>{`𝓛_${historyNode.level}`}</PaperText></dd><dt>Type</dt><dd>{historyNode.level < 0 ? 'Root' : historyNode.leader ? 'Leader node' : 'Nonleader node'}</dd><dt><PaperText>{historyNode.level < 1 ? 'Outdegree' : `Outdegree d_${historyNode.level}(v${historyNode.id})`}</PaperText></dt><dd>{historyNode.level < 1 ? '—' : historyNode.outdegree}</dd><dt>Parent</dt><dd><PaperText>{historyNode.parent === null ? '—' : `v${historyNode.parent}`}</PaperText></dd></dl>{observer && <div className="fiber-note"><strong>Observer only · unavailable to the agent</strong><p><PaperText>{`A(v${historyNode.id}) = {${historyNode.fiber.map(id => `x${id}`).join(', ')}}`}</PaperText></p><p><PaperText>{`a(v${historyNode.id}) = |A(v${historyNode.id})| = ${historyNode.fiber.length}`}</PaperText></p></div>}</div>}
         </div>
       </aside>}
     </SplitWorkspace>
 
     {guideOpen && <div className="guide-popover" role="dialog" aria-label="Simulation help"><div className="dialog-header"><h2>Help</h2><button className="icon-button" aria-label="Close help" onClick={() => setGuideOpen(false)}><Icon name="close" /></button></div>
-      <p>Core algorithm (§4.1): test m ≥ ℓ at round 2m − 1, using the prefix through L_m. Imported networks use this schedule too.</p>
-      <p>Click an agent to see its local view. Drag nodes to move them; scroll or pinch to zoom.</p>
-      <div className="help-legend"><span><i className="legend-dot leader" />Leader</span><span><i className="legend-dot" />Agent</span><span><i className="legend-dot halted" />Halted</span><span><i className="legend-line" />Parent</span><span><i className="legend-line red" />Message</span></div>
-      <div className="phase-buttons">{phases.map(item => <button key={item.id} className={phase === item.id ? 'active' : ''} onClick={() => setPhase(item.id)}>{item.title}</button>)}</div><p>{phases.find(item => item.id === phase)?.explanation}</p><p className="shortcuts">Space: play / pause · ← / →: previous / next round. Focus the graph and press Enter to inspect; ↑ / ↓ select agents.</p><p><a href={`${import.meta.env.BASE_URL}licenses/index.html`} target="_blank" rel="noreferrer">Third-party licenses</a></p></div>}
+      <p><PaperText>{'Core algorithm (§4.1): test m ≥ ℓ at round 2m − 1, using the prefix through 𝓛_m. Imported networks use this schedule too.'}</PaperText></p>
+      <p>Click an agent to see its vista, shaded green. Drag nodes to move them; scroll or pinch to zoom.</p>
+      <div className="help-legend"><span><i className="legend-dot leader" />Leader</span><span><i className="legend-dot" />Nonleader</span><span><i className="legend-dot halted" />Halted</span><span><i className="legend-line" /><PaperText>{'Black: d_r(v)'}</PaperText></span><span><i className="legend-line red" /><PaperText>{'Red: μ_r(u,v)'}</PaperText></span></div>
+      <p><PaperText>{'In the vista, black and red edges point away from the root; labels equal to 1 are omitted. Black edges from the root have no outdegree label.'}</PaperText></p>
+      <p><PaperText>{'Labels x0, x1, … identify physical agents only for the observer; v0, v1, … identify history nodes. The observer overlay adds the corresponding node and actual anonymity a(v), with fibre A(v) in node details. These are unavailable to the agents.'}</PaperText></p>
+      <div className="phase-buttons">{phases.map(item => <button key={item.id} className={phase === item.id ? 'active' : ''} onClick={() => setPhase(item.id)}>{item.title}</button>)}</div><p><PaperText>{phases.find(item => item.id === phase)?.explanation ?? ''}</PaperText></p><p className="shortcuts">Space: play / pause · ← / →: previous / next round. Focus the graph and press Enter to inspect; ↑ / ↓ select agents.</p><p><a href={`${import.meta.env.BASE_URL}licenses/index.html`} target="_blank" rel="noreferrer">Third-party licenses</a></p></div>}
     {editorOpen && <ScenarioEditor scenario={scenario} onClose={() => setEditorOpen(false)} onApply={next => loadScenario(next)} />}
   </div>;
 }

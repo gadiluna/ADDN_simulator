@@ -67,11 +67,15 @@ test('lower bounds and random networks still run and replay exported scenarios',
   await expect(picker.locator('option:checked')).toHaveText('Alternating');
   await picker.selectOption('lower-bound');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
+  await inspectAgent(page);
+  await expect(page.getByRole('heading', { name: 'Agent 1', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Advance one round' }).click();
   await expect(page.getByTestId('round-number')).toHaveText('01');
   await picker.selectOption('lower-bound-companion');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   await expect(page.getByTestId('round-number')).toHaveText('00');
+  await inspectAgent(page);
+  await expect(page.getByRole('heading', { name: 'Agent 1', exact: true })).toBeVisible();
   await picker.selectOption('random');
   await page.getByRole('spinbutton', { name: 'Number of agents' }).fill('9');
   await page.getByRole('spinbutton', { name: 'Number of leaders' }).fill('3');
@@ -172,7 +176,7 @@ test('missing engine is reported without fabricated execution data', async ({ pa
   await expect(page.getByTestId('round-number')).toHaveText('00');
 });
 
-test('real engine replays rounds and opens local history and math only when inspecting', async ({ page }) => {
+test('real engine replays rounds and opens the vista and math only when inspecting', async ({ page }) => {
   test.skip(!engineBuilt, 'Build the actual C/WebAssembly engine.');
   await page.goto('/');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
@@ -183,7 +187,7 @@ test('real engine replays rounds and opens local history and math only when insp
   await expect(page.getByTestId('round-number')).toHaveText('00');
   await next.click(); await expect(page.getByTestId('round-number')).toHaveText('01');
   await inspectAgent(page);
-  await expect(page.getByRole('img', { name: 'Local history view graph' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Vista graph' })).toBeVisible();
   await page.getByRole('img', { name: 'Directed communication network' }).press('ArrowDown');
   await expect(page.getByRole('heading', { name: 'Agent 1', exact: true })).toBeVisible();
   await page.getByText('Mathematical details', { exact: true }).click();
@@ -209,7 +213,7 @@ test('mobile workspace and agent drawer have no horizontal overflow', async ({ p
   if (engineBuilt) {
     await inspectAgent(page);
     await expect(page.getByRole('button', { name: 'Close agent details' })).toBeInViewport({ ratio: 1 });
-    await expect(page.getByRole('img', { name: 'Local history view graph' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Vista graph' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.getByRole('button', { name: 'Play execution' }).click();
     await page.getByRole('button', { name: 'Pause execution' }).click();
@@ -321,7 +325,7 @@ test('inspected history follows new rounds and preserves manual camera controls'
   await page.goto('/');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   await inspectAgent(page);
-  const history = page.getByRole('img', { name: 'Local history view graph' });
+  const history = page.getByRole('img', { name: 'Vista graph' });
   for (let round = 1; round <= 5; round++) {
     await page.getByRole('button', { name: 'Advance one round' }).click();
     await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));

@@ -14,8 +14,8 @@ async function graphState(graph: Locator) {
     const cy = (element as HTMLElement & { _cyreg: { cy: Core } })._cyreg.cy;
     return {
       width: cy.width(), height: cy.height(), zoom: cy.zoom(),
-      nodes: cy.nodes().map(node => ({ id: node.id(), position: node.position(), box: node.renderedBoundingBox({ includeLabels: true, includeOverlays: false, includeUnderlays: false }) })),
-      edges: cy.edges().map(edge => ({ id: edge.id(), source: edge.source().id(), target: edge.target().id(), muted: edge.hasClass('context-edge'), label: edge.data('label') as string })),
+      nodes: cy.nodes().map(node => ({ id: node.id(), label: node.data('label') as string, fill: node.style('background-color'), border: node.style('border-style'), position: node.position(), box: node.renderedBoundingBox({ includeLabels: true, includeOverlays: false, includeUnderlays: false }) })),
+      edges: cy.edges().map(edge => ({ id: edge.id(), source: edge.source().id(), target: edge.target().id(), muted: edge.hasClass('context-edge'), black: edge.hasClass('black'), red: edge.hasClass('red'), label: edge.data('label') as string })),
     };
   });
 }
@@ -94,14 +94,14 @@ for (const n of [32, 128]) test(`${n} agents fit without overlaps and retain eve
   await expect(showAll).toBeInViewport({ ratio: 1 });
 });
 
-test('local history can be traversed and inspected entirely from the keyboard', async ({ page }) => {
+test('the vista can be traversed and inspected entirely from the keyboard', async ({ page }) => {
   test.skip(!engineBuilt, 'Build the actual C/WebAssembly engine.');
   await page.goto('/');
   await expect(page.locator('.engine-status')).toHaveText('Ready');
   await page.getByRole('button', { name: 'Advance one round' }).click();
   await expect(page.getByTestId('round-number')).toHaveText('01');
   await page.getByRole('img', { name: 'Directed communication network', exact: true }).press('Enter');
-  const history = page.getByRole('img', { name: 'Local history view graph', exact: true });
+  const history = page.getByRole('img', { name: 'Vista graph', exact: true });
   await expect(history).toHaveAttribute('tabindex', '0');
   await history.focus();
   await history.press('Home');
@@ -121,4 +121,71 @@ test('local history can be traversed and inspected entirely from the keyboard', 
   await history.press('Home');
   await history.press('Enter');
   await expect(heading).toHaveText(rootHeading!);
+});
+
+test('vista labels and leader colors follow the paper while observer facts stay optional', async ({ page }) => {
+  test.skip(!engineBuilt, 'Build the actual C/WebAssembly engine.');
+  await page.goto('/');
+  const scenario: Scenario = {
+    schema_version: 1, name: 'Paper graph conventions', variant: 'core', n: 3, leaders: [0], repeat_last: true,
+    rounds: [{ edges: [
+      { source: 0, target: 1, multiplicity: '2' },
+      { source: 1, target: 2, multiplicity: '2' },
+      { source: 2, target: 0, multiplicity: '1' },
+    ] }],
+  };
+  await page.getByLabel('Import scenario file').setInputFiles({ name: 'paper-graph.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(scenario)) });
+  await expect(page.locator('.engine-status')).toHaveText('Ready');
+  const network = page.getByRole('img', { name: 'Directed communication network', exact: true });
+  const initial = await graphState(network);
+  expect(initial.nodes.map(node => node.label)).toEqual(['x0', 'x1', 'x2']);
+  expect(initial.nodes[0].fill).toBe('rgb(219,234,254)');
+  expect(initial.nodes[1].fill).toBe('rgb(255,255,255)');
+  expect(initial.edges.every(edge => !edge.black && !edge.red)).toBe(true);
+  expect(initial.edges.find(edge => edge.source === 'a0')?.label).toBe('×2');
+  await page.getByRole('button', { name: 'Advance one round' }).click();
+  await expect(page.getByTestId('round-number')).toHaveText('01');
+  await network.press('ArrowDown');
+  await expect(page.getByRole('heading', { name: 'Agent 1', exact: true })).toBeVisible();
+  await expect(page.locator('.agent-type')).toHaveText('Nonleader');
+  await expect(page.locator('.agent-properties')).toContainText('⊥');
+  const vista = page.getByRole('img', { name: 'Vista graph', exact: true });
+  const history = await graphState(vista);
+  expect(history.nodes.every(node => node.label === 'Root' || node.label === node.id)).toBe(true);
+  expect(history.edges.filter(edge => edge.black && edge.label === '2')).toHaveLength(1);
+  expect(history.edges.filter(edge => edge.red && edge.label === '2')).toHaveLength(1);
+  expect(history.edges.every(edge => ['', '2'].includes(edge.label))).toBe(true);
+  for (const edge of history.edges) {
+    const source = history.nodes.find(node => node.id === edge.source)!;
+    const target = history.nodes.find(node => node.id === edge.target)!;
+    expect(source.position.y).toBeLessThan(target.position.y);
+    if (source.label === 'Root') expect(edge.label).toBe('');
+  }
+  await vista.press('End');
+  await vista.press('Enter');
+  await expect(page.locator('.fiber-note')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Options', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Observer overlay' }).check();
+  await page.getByRole('button', { name: 'Options', exact: true }).click();
+  await expect(page.locator('.fiber-note')).toContainText('Observer only · unavailable to the agent');
+  await expect(page.locator('.fiber-note .paper-fiber')).toHaveCount(2);
+  await expect(page.locator('.fiber-note .paper-anonymity')).toHaveText('a');
+  expect((await graphState(network)).nodes.every(node => /^x\d+\nv\d+$/.test(node.label))).toBe(true);
+  expect((await graphState(vista)).nodes.every(node => node.label === 'Root' || /^v\d+\na=\d+$/.test(node.label))).toBe(true);
+  for (let round = 2; round <= 5; round++) {
+    await page.getByRole('button', { name: 'Advance one round' }).click();
+    await expect(page.getByTestId('round-number')).toHaveText(String(round).padStart(2, '0'));
+  }
+  await expect(page.getByText('COMPLETE', { exact: true })).toBeVisible();
+  const halted = await graphState(network);
+  expect(halted.nodes.map(node => node.fill)).toEqual(initial.nodes.map(node => node.fill));
+  expect(halted.nodes.every(node => node.border === 'double')).toBe(true);
+
+  // A zero outdegree is a real observation; the root's level-zero sentinel is not.
+  await page.getByRole('combobox', { name: 'Example scenario' }).selectOption('singleton');
+  await expect(page.locator('.engine-status')).toHaveText('Ready');
+  await page.getByRole('button', { name: 'Advance one round' }).click();
+  await expect(page.getByTestId('round-number')).toHaveText('01');
+  await network.press('Enter');
+  expect((await graphState(vista)).edges.filter(edge => edge.black).map(edge => edge.label).sort()).toEqual(['', '0']);
 });

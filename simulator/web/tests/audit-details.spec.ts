@@ -82,9 +82,9 @@ test('inconsistency and nonuniqueness have exact algebraic certificates', () => 
   expect(inconsistent.solution.unique.witness).toContain('[Flow equation at 𝓛_1 for u = v1]');
   expect(inconsistent.solution.unique.witness).toContain('[Leader equation at 𝓛_1]');
   const nonunique = explain(fixture('non_unique'));
-  expect(nonunique.solution.unique.witness).toContain('rank(A) = 1 < 2');
+  expect(nonunique.solution.unique.witness).toContain('rank(M) = 1 < 2');
   expect(nonunique.solution.unique.witness).toContain('z(v3) = 0, z(v4) = 1');
-  expect(nonunique.solution.unique.witness).toContain('A·z = 0');
+  expect(nonunique.solution.unique.witness).toContain('M·z = 0');
 });
 
 test('large integers and rational denominators remain exact in equations, solution and sum', () => {

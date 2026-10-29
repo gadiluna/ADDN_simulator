@@ -60,7 +60,7 @@ def lowerbound_pair(n, ell):
     """Return (smaller, larger, observer_left, observer_right, common_depth).
 
     For several leaders this follows Appendix Termination Lower Bounds, including
-    its final cycle (the figure placeholder elsewhere in the paper is outdated).
+    its final directed cycle.
     """
     assert 1 <= ell <= n
     if n == ell:

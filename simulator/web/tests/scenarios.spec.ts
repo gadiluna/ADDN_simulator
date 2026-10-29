@@ -66,23 +66,59 @@ test('random generation changes with its seed, uses the core schedule, and rejec
   for (const count of [0, 13, 1.5, Number.NaN]) expect(() => randomScenario(12, '1729', count)).toThrow('Leader count must be an integer');
 });
 
-test('both lower-bound presets reproduce the independent appendix fixtures including the final cycle', () => {
-  const fixtureDirectory = fileURLToPath(new URL('../../tests/', import.meta.url));
-  const python = process.env.COUNTING_PYTHON || 'python3';
-  const reference = JSON.parse(execFileSync(python, ['-c', 'import json; from fixtures import lowerbound_pair; print(json.dumps(lowerbound_pair(6, 2)[:2]))'], {
-    cwd: fixtureDirectory,
-    encoding: 'utf8',
-  })) as Scenario[];
-  const coreTopology = ({ name: _name, variant: _variant, ...scenario }: Scenario) => scenario;
-  for (const [index, id] of ['lower-bound', 'lower-bound-companion'].entries()) {
-    const scenario = presets.find(preset => preset.id === id)?.scenario;
-    expect(scenario, `Missing ${id} preset`).toBeDefined();
-    expect(coreTopology(scenario!)).toEqual(coreTopology(reference[index]));
-    expect(validateScenario(scenario)).toEqual(scenario);
-    const final = scenario!.rounds.at(-1)!.edges;
-    expect(final).toHaveLength(scenario!.n);
-    expect(new Set(final.map(edge => edge.source)).size).toBe(scenario!.n);
-    expect(new Set(final.map(edge => edge.target)).size).toBe(scenario!.n);
-    expect(scenario!.repeat_last).toBe(true);
-  }
-});
+for (const pair of [
+  { n: 6, ell: 2, common: 9, ids: ['lower-bound', 'lower-bound-companion'] },
+  { n: 4, ell: 1, common: 6, ids: ['one-leader-bound', 'one-leader-companion'] },
+  { n: 4, ell: 4, common: 3, ids: ['all-leader-bound', 'all-leader-companion'] },
+]) {
+  test(`appendix pair n=${pair.n}, ℓ=${pair.ell} matches independent fixtures and designated leaders' vistas`, () => {
+    const selected = pair.ids.map(id => {
+      const preset = presets.find(item => item.id === id);
+      expect(preset, `Missing ${id} preset`).toBeDefined();
+      return preset!;
+    });
+    const fixtureDirectory = fileURLToPath(new URL('../../tests/', import.meta.url));
+    const python = process.env.COUNTING_PYTHON || 'python3';
+    // Compare graphs with independent fixtures, then reconstruct the actual web
+    // scenarios' vistas through the first differing round using the Python oracle.
+    const reference = JSON.parse(execFileSync(python, ['-c', `
+import json, sys
+from fixtures import lowerbound_pair
+from oracle import simulate, node_signatures
+left, right, x, y, common = lowerbound_pair(int(sys.argv[1]), int(sys.argv[2]))
+signatures = []
+for value, designated in zip(json.load(sys.stdin), (x, y)):
+    result = simulate(value, max_rounds=common + 1, passive=True)
+    signatures.append([node_signatures(snap)[snap["agents"][designated]["bottom"]]
+                       for snap in result["snapshots"]])
+print(json.dumps(dict(scenarios=[left, right], designated=[x, y], common=common,
+                     signatures=signatures)))
+`, String(pair.n), String(pair.ell)], {
+      cwd: fixtureDirectory,
+      encoding: 'utf8',
+      input: JSON.stringify(selected.map(preset => preset.scenario)),
+    })) as { scenarios: Scenario[]; designated: number[]; common: number; signatures: string[][] };
+    const coreTopology = ({ name: _name, variant: _variant, ...scenario }: Scenario) => scenario;
+    for (const [index, preset] of selected.entries()) {
+      const scenario = preset.scenario;
+      expect(coreTopology(scenario)).toEqual(coreTopology(reference.scenarios[index]));
+      expect(validateScenario(scenario)).toEqual(scenario);
+      expect(preset.designatedAgent).toBe(reference.designated[index]);
+      expect(scenario.leaders).toContain(preset.designatedAgent);
+      expect(scenario.repeat_last).toBe(true);
+      if (pair.ell > 1 && pair.n > pair.ell) {
+        const final = scenario.rounds.at(-1)!.edges;
+        expect(final).toHaveLength(scenario.n);
+        expect(new Set(final.map(edge => edge.source)).size).toBe(scenario.n);
+        expect(new Set(final.map(edge => edge.target)).size).toBe(scenario.n);
+      }
+    }
+    expect(reference.common).toBe(pair.common);
+    expect(reference.signatures[0]).toHaveLength(pair.common + 2);
+    expect(reference.signatures[1]).toHaveLength(pair.common + 2);
+    for (let round = 0; round <= pair.common; round++) {
+      expect(reference.signatures[0][round], `Common vista at round ${round}`).toBe(reference.signatures[1][round]);
+    }
+    expect(reference.signatures[0][pair.common + 1]).not.toBe(reference.signatures[1][pair.common + 1]);
+  });
+}

@@ -182,7 +182,7 @@ function linearWitness(equations: AuditEquation[], columns: number[], reason: st
   const vector = columns.map(() => zero);
   vector[free] = one;
   pivots.forEach((column, row) => { vector[column] = neg(matrix[row][free]); });
-  return `rank(A) = ${pivots.length} < ${width}; z = (${columns.map((id, i) => `z(v${id}) = ${format(vector[i])}`).join(', ')}), z ≠ 0, A·z = 0. The solution is not unique.`;
+  return `For the coefficient matrix M, rank(M) = ${pivots.length} < ${width}; z = (${columns.map((id, i) => `z(v${id}) = ${format(vector[i])}`).join(', ')}), z ≠ 0, M·z = 0. The solution is not unique.`;
 }
 
 /** Explain one engine decision using only the agent's visible prefix.

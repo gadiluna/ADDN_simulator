@@ -68,11 +68,18 @@ test('accepted candidate exposes the separate total, backward checks and descend
   await expect(anchor).toContainText('candidate number of agents');
   await expect(anchor.locator('.math-definition')).toContainText('b(v)');
   await expect(anchor).toContainText('b(v18) = 2');
+  // Formula typography must keep the same symbols and exact coefficients.
+  const flowRule = anchor.locator('.paper-text').filter({ hasText: 'for u ∈' });
+  await expect(flowRule.locator('.paper-sum')).toHaveCount(2);
+  await expect(flowRule.locator('.paper-sum-bound').first()).toContainText('v ∈ 𝓛6');
+  await expect(flowRule.locator('.paper-anonymity').first()).toHaveText('b');
+  await expect(flowRule).not.toContainText(/[_{}]/);
+  await expect(anchor.locator('.math-definition .paper-anonymity')).toHaveText('b');
   const backward = await openStep(page, 4);
   await expect(backward).toContainText('Disjoint refinement');
   await expect(backward).toContainText(/flow/i);
-  await expect(backward).toContainText('μ_1(');
-  await expect(backward).toContainText('d_1(w)b(w)');
+  await expect(backward).toContainText('μ1(');
+  await expect(backward).toContainText('d1(w)b(w)');
   await expect(backward).toContainText('b(v0)');
   await expect(backward.locator('.math-evidence-line[data-result="fail"]')).toHaveCount(0);
   await openStep(page, 5);
@@ -84,7 +91,7 @@ test('accepted candidate exposes the separate total, backward checks and descend
     await expect(row).toContainText('1 ≤ 2');
     await expect(row).toContainText('Passed');
   }
-  await expect(page.locator('.math-step[data-step="5"]')).toContainText('𝓛_6');
+  await expect(page.locator('.math-step[data-step="5"]')).toContainText('𝓛6');
   await expect(page.locator('.math-step[data-step="5"]')).toContainText(/itself/);
   await anchor.getByRole('button', { name: 'Inspect history node v18', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'History node v18', exact: true })).toBeInViewport();
@@ -115,7 +122,7 @@ test('a structural rejection identifies the actual level, count and limit', asyn
   await page.getByText('Mathematical details', { exact: true }).click();
   await expect(page.locator('.math-step[data-step="1"]')).toHaveAttribute('data-status', 'failed');
   await expect(page.locator('.math-step[data-status="not-reached"]')).toHaveCount(4);
-  await expect(page.locator('.math-step[data-step="1"]')).toContainText('𝓛_1');
+  await expect(page.locator('.math-step[data-step="1"]')).toContainText('𝓛1');
   await expect(page.locator('.math-step[data-step="1"]')).toContainText(/7\s*>\s*(m\s*=\s*)?2/);
   await expect(page.locator('.math-descendants')).toHaveCount(0);
 });
@@ -133,5 +140,5 @@ test('the singleton runs the full core audit at round one', async ({ page }) => 
   await expect(page.locator('.math-metadata')).toContainText('Candidate m1');
   const suffix = await openStep(page, 5);
   await expect(suffix).toContainText('1 ≤ 1');
-  await expect(suffix).toContainText('𝓛_1');
+  await expect(suffix).toContainText('𝓛1');
 });

@@ -68,7 +68,27 @@ function lowerBoundPair(): [Scenario, Scenario] {
 
 const [lowerBound, lowerBoundCompanion] = lowerBoundPair();
 
-export const presets: { id: string; name: string; note: string; tag: string; scenario: Scenario }[] = [
+/** The appendix's path pairs, with the same known leader count in both networks. */
+function pathLowerBoundPair(n: number, ell: number): [Scenario, Scenario] {
+  const leaders = Array.from({ length: ell }, (_, i) => i);
+  const oneLeader = ell === 1;
+  const scenario = (order: number): Scenario => ({
+    schema_version: 1,
+    name: `${oneLeader ? 'One-leader bound' : order === n ? 'All-leader bound' : 'All-leader companion'} · ${order} agents`,
+    variant: 'core', n: order, leaders: [...leaders], repeat_last: true,
+    rounds: [{ edges: [
+      ...Array.from({ length: order - 1 }, (_, i) => edge(i, i + 1)),
+      ...Array.from({ length: order - 1 }, (_, i) => edge(i + 1, i)),
+      ...(oneLeader ? [edge(order - 1, order - 1)] : []),
+    ] }],
+  });
+  return [scenario(n), scenario(n + 1)];
+}
+
+const [oneLeaderBound, oneLeaderCompanion] = pathLowerBoundPair(4, 1);
+const [allLeaderBound, allLeaderCompanion] = pathLowerBoundPair(4, 4);
+
+export const presets: { id: string; name: string; note: string; tag: string; designatedAgent?: number; scenario: Scenario }[] = [
   {
     id: 'cycle', name: 'Alternating', note: 'Direction reverses every round.', tag: '06 AGENTS',
     scenario: { schema_version: 1, name: 'Alternating', variant: 'core', n: 6, leaders: [0, 3], rounds: Array.from({ length: 16 }, (_, i) => ({ edges: cycleEdges(6, i % 2 === 1) })), repeat_last: true, seed: '1' },
@@ -86,12 +106,28 @@ export const presets: { id: string; name: string; note: string; tag: string; sce
     scenario: { schema_version: 1, name: 'One agent, no edges', variant: 'core', n: 1, leaders: [0], rounds: [{ edges: [] }], repeat_last: true },
   },
   {
-    id: 'lower-bound', name: lowerBound.name!, note: 'Appendix construction; observer 1 matches the companion through round 9.', tag: '06 AGENTS',
+    id: 'lower-bound', name: lowerBound.name!, note: 'Appendix pair: designated leader x₁ has the same vista in both networks through round 9.', tag: '06 AGENTS', designatedAgent: 1,
     scenario: lowerBound,
   },
   {
-    id: 'lower-bound-companion', name: lowerBoundCompanion.name!, note: 'Companion construction; observer 1 matches the smaller network through round 9.', tag: '07 AGENTS',
+    id: 'lower-bound-companion', name: lowerBoundCompanion.name!, note: 'Appendix companion: designated leader x₁ has the same vista in both networks through round 9.', tag: '07 AGENTS', designatedAgent: 1,
     scenario: lowerBoundCompanion,
+  },
+  {
+    id: 'one-leader-bound', name: oneLeaderBound.name!, note: 'Appendix pair with one leader and a terminal self-loop: x₀ has the same vista through round 6.', tag: '04 AGENTS', designatedAgent: 0,
+    scenario: oneLeaderBound,
+  },
+  {
+    id: 'one-leader-companion', name: oneLeaderCompanion.name!, note: 'One-leader companion with a terminal self-loop: x₀ has the same vista through round 6.', tag: '05 AGENTS', designatedAgent: 0,
+    scenario: oneLeaderCompanion,
+  },
+  {
+    id: 'all-leader-bound', name: allLeaderBound.name!, note: 'Appendix pair with four known leaders: x₀ has the same vista in both networks through round 3.', tag: '04 AGENTS', designatedAgent: 0,
+    scenario: allLeaderBound,
+  },
+  {
+    id: 'all-leader-companion', name: allLeaderCompanion.name!, note: 'Four leaders and one nonleader: designated leader x₀ has the same vista through round 3.', tag: '05 AGENTS', designatedAgent: 0,
+    scenario: allLeaderCompanion,
   },
 ];
 

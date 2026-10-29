@@ -43,7 +43,7 @@ test('dragging the divider resizes both graphs, preserves the split, and respect
   const divider = await openInspector(page);
   const inspector = page.getByRole('complementary', { name: 'Agent inspector' });
   const network = page.getByRole('img', { name: 'Directed communication network', exact: true });
-  const history = page.getByRole('img', { name: 'Local history view graph', exact: true });
+  const history = page.getByRole('img', { name: 'Vista graph', exact: true });
   const initialNetworkWidth = await width(network);
   await expectWidth(inspector, 420);
   await expect(divider).toHaveAttribute('aria-orientation', 'vertical');
