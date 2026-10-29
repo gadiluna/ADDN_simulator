@@ -19,6 +19,12 @@ test('the production site loads its engine and completes a run under the Pages p
     'Check the visible structure', 'Choose the anchor', 'Solve the anchor',
     'Propagate backward', 'Check the suffix',
   ]);
+  await page.locator('.math-step[data-step="3"] summary').click();
+  await expect(page.locator('.math-definition')).toContainText('b(v)');
+  await expect(page.locator('.math-step[data-step="3"]')).toContainText('b(v18) = 2');
+  await page.locator('.math-step[data-step="5"] summary').click();
+  await expect(page.locator('.math-descendants thead th')).toHaveText(['Node', 'q(v)', 'b(v)', 'q(v) ≤ b(v)']);
+  await expect(page.locator('.math-audit')).not.toContainText(/\bx(?:\(|_)/);
   const notices = await page.request.get('licenses/index.html');
   expect(notices.ok()).toBe(true);
   expect(await notices.text()).toContain('GMP');

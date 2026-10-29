@@ -77,7 +77,7 @@ export default function MathDetails({ audit, round, variant, ell, nodes, visible
           {expanded[step.number] && <div className="math-step-evidence">
             <p className="math-step-summary">{step.summary}</p>
             {step.witness && !step.summary.includes(step.witness) && <p className="math-witness">{step.witness}</p>}
-            {step.number === 3 && step.status !== 'not-reached' && <p className="math-definition"><i>x</i><sub>v</sub> is the candidate number of agents represented by history node v.</p>}
+            {step.number === 3 && step.status !== 'not-reached' && <p className="math-definition"><b>b</b>(<i>v</i>) is the candidate anonymity of history node v: the candidate number of agents it represents.</p>}
             <Evidence lines={step.evidence} onNodeSelect={inspectNode} />
             {step.number === 3 && step.status !== 'not-reached' && <div className="math-solution-checks">{([
               ['unique', 'Unique solution', details.solution.unique],
@@ -90,7 +90,7 @@ export default function MathDetails({ audit, round, variant, ell, nodes, visible
               {result.witness && !result.expression.includes(result.witness) && <p className="math-witness">{result.witness}</p>}
             </div>)}</div>}
             {step.number === 5 && details.descendants.length > 0 && <div className="math-table-scroll" role="region" aria-label="Black descendant counts" tabIndex={0}>
-              <table className="math-descendants"><thead><tr><th scope="col">Node</th><th scope="col">q(v)</th><th scope="col"><i>x</i><sub>v</sub></th><th scope="col">q(v) ≤ <i>x</i><sub>v</sub></th></tr></thead><tbody>{details.descendants.map(value => <tr key={value.node}>
+              <table className="math-descendants"><thead><tr><th scope="col">Node</th><th scope="col">q(v)</th><th scope="col"><b>b</b>(<i>v</i>)</th><th scope="col">q(v) ≤ <b>b</b>(<i>v</i>)</th></tr></thead><tbody>{details.descendants.map(value => <tr key={value.node}>
                 <th scope="row"><NodeLink node={value.node} onNodeSelect={inspectNode} /></th><td>{value.count}</td><td>{value.value}</td><td><code className="math-expression">{value.count} {value.passes ? '≤' : '>'} {value.value}</code><span className={`math-status ${value.passes ? 'passed' : 'failed'}`}>{value.passes ? 'Passed' : 'Failed'}</span></td>
               </tr>)}</tbody></table>
             </div>}

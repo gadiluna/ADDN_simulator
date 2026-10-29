@@ -35,6 +35,7 @@ for (const value of fixtures.filter(value => value.reason in failedSteps)) {
     const details = explain(value);
     const failed = failedSteps[value.reason];
     expect(details.status).toBe('rejected');
+    expect(JSON.stringify(details)).not.toMatch(/\bx(?:\(|_)/);
     expect(details.steps.map(step => step.status)).toEqual([1, 2, 3, 4, 5].map(number => number < failed ? 'passed' : number === failed ? 'failed' : 'not-reached'));
     expect(details.steps[failed - 1].witness).toBeTruthy();
     expect(details.witness).toBe(details.steps[failed - 1].witness);
@@ -56,7 +57,7 @@ test('no flat level is a structure rejection, and a later valid anchor is select
 test('node-limit evidence stops at the first rejected level', () => {
   const details = explain(fixture('node_limit'));
   expect(details.structure.levels).toHaveLength(2);
-  expect(details.steps[0].evidence.map(line => line.label)).toEqual(['Leader in L_0', 'Level L_0']);
+  expect(details.steps[0].evidence.map(line => line.label)).toEqual(['Leader in 𝓛_0', 'Level 𝓛_0']);
 });
 
 test('equation labels retain source-node provenance and total is never appended to the system', () => {
@@ -64,9 +65,12 @@ test('equation labels retain source-node provenance and total is never appended 
   const details = explain(value);
   expect(details.equations.map(({ terms, rhs }) => ({ terms, rhs }))).toEqual(value.audit.equations);
   expect(details.equations.map(eq => [eq.kind, eq.parent, eq.label])).toEqual([
-    ['flow', 1, 'Flow equation F(1, v1)'], ['flow', 2, 'Flow equation F(1, v2)'], ['leader', null, 'Leader equation L(1)'],
+    ['flow', 1, 'Flow equation at 𝓛_1 for u = v1'], ['flow', 2, 'Flow equation at 𝓛_1 for u = v2'], ['leader', null, 'Leader equation at 𝓛_1'],
   ]);
   expect(details.solution.total.expression).toContain('separate post-solve check');
+  expect(details.solution.total.expression).toContain('Σ_{v ∈ 𝓛_1} b(v)');
+  expect(details.equations.some(eq => eq.expression.includes('b(v3)'))).toBe(true);
+  expect(details.steps[2].evidence.some(line => line.label === 'Candidate anonymity b(v3)')).toBe(true);
   expect(explain(fixture('non_unique')).solution.unique.status).toBe('failed');
   expect(details.steps.every(step => step.status === 'passed')).toBe(true);
   expect(details.nextTest).toBeNull();
@@ -75,8 +79,8 @@ test('equation labels retain source-node provenance and total is never appended 
 test('inconsistency and nonuniqueness have exact algebraic certificates', () => {
   const inconsistent = explain(fixture('inconsistent'));
   expect(inconsistent.solution.unique.witness).toContain('⇒ 0 = 1');
-  expect(inconsistent.solution.unique.witness).toContain('[Flow equation F(1, v1)]');
-  expect(inconsistent.solution.unique.witness).toContain('[Leader equation L(1)]');
+  expect(inconsistent.solution.unique.witness).toContain('[Flow equation at 𝓛_1 for u = v1]');
+  expect(inconsistent.solution.unique.witness).toContain('[Leader equation at 𝓛_1]');
   const nonunique = explain(fixture('non_unique'));
   expect(nonunique.solution.unique.witness).toContain('rank(A) = 1 < 2');
   expect(nonunique.solution.unique.witness).toContain('z(v3) = 0, z(v4) = 1');
@@ -87,7 +91,7 @@ test('large integers and rational denominators remain exact in equations, soluti
   const huge = ((1n << 200n) + 17n).toString();
   const total = explain(fixture('huge_total'));
   expect(total.solution.values).toEqual([{ node: 3, value: '1' }, { node: 4, value: huge }]);
-  expect(total.solution.total.witness).toBe(`Σ x(v) = ${(BigInt(huge) + 1n).toString()} ≠ m = 3.`);
+  expect(total.solution.total.witness).toBe(`Σ b(v) = ${(BigInt(huge) + 1n).toString()} ≠ m = 3.`);
   expect(total.equations[0].expression).toContain(huge);
   expect(JSON.stringify(total)).not.toMatch(/[0-9]e\+[0-9]/);
   const fraction = explain(fixture('huge_fraction'));
@@ -101,8 +105,11 @@ test('backward propagation exposes root and child sums, plus the exact unequal f
   const details = explain(fixture('backward_flow'));
   expect(details.backward.values.find(value => value.node === 0)).toEqual({ node: 0, level: -1, value: '2', children: [{ node: 1, value: '1' }, { node: 2, value: '1' }] });
   expect(details.backward.flows.find(flow => !flow.passes)).toMatchObject({ node: 1, level: 1, left: '1', right: '2' });
-  expect(details.witness).toBe('F(1, v1): incoming total 1 ≠ outgoing total 2.');
+  expect(details.witness).toBe('Flow equation at 𝓛_1 for u = v1: incoming total 1 ≠ outgoing total 2.');
   expect(details.descendants).toEqual([]);
+  expect(details.backward.flows[0].expression).toContain('Σ_{v ∈ 𝓛_1} μ_1(v1,v)b(v)');
+  expect(details.backward.flows[0].expression).toContain('Σ_{w child of v1 in 𝓛_1} d_1(w)b(w)');
+  expect(details.steps[3].evidence.some(line => line.expression.includes('b(v0) = b(v1) + b(v2)'))).toBe(true);
 });
 
 test('suffix counts only black descendants and counts the anchor itself at an equal cutoff', () => {
@@ -111,7 +118,7 @@ test('suffix counts only black descendants and counts the anchor itself at an eq
     { node: 3, count: '2', value: '1', passes: false, descendantNodes: [5, 6] },
     { node: 4, count: '1', value: '2', passes: true, descendantNodes: [7] },
   ]);
-  expect(suffix.witness).toBe('q(v3) = 2 > x(v3) = 1 at L_2.');
+  expect(suffix.witness).toBe('q(v3) = 2 > b(v3) = 1 at 𝓛_2.');
   const equal = explain(fixture('accepted'));
   expect(equal.descendants.map(row => row.descendantNodes)).toEqual([[3], [4]]);
   expect(equal.steps[4].evidence[0].expression).toContain('counts itself');
@@ -160,7 +167,7 @@ for (const [variant, ell, round, candidate, nextRound, finalLevel, kind] of [
   });
 }
 
-test('all-leaders success and failure are separate from five steps, with local L_0 evidence', () => {
+test('all-leaders success and failure are separate from five steps, with local 𝓛_0 evidence', () => {
   const base = fixture('accepted');
   for (const accepted of [true, false]) {
     const audit: Audit = { ...empty, candidate: 2, final_level: 0, status: accepted ? 'accepted' : 'rejected', reason: accepted ? 'all_leaders' : 'nonleader_visible' };
@@ -168,7 +175,7 @@ test('all-leaders success and failure are separate from five steps, with local L
     expect(details.kind).toBe('all-leaders');
     expect(details.testRound).toBe(2);
     expect(details.steps).toEqual([]);
-    expect(details.evidence[0].expression).toContain(accepted ? 'L_0: 0' : 'L_0: 1 (v2)');
+    expect(details.evidence[0].expression).toContain(accepted ? '𝓛_0: 0' : '𝓛_0: 1 (v2)');
     expect(details.nextTest).toEqual(accepted ? null : { candidate: 3, round: 4, kind: 'five-step', finalLevel: 2 });
   }
 });

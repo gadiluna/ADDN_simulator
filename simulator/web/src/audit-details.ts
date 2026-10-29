@@ -118,7 +118,7 @@ function linear(terms: { coefficient: string; name: string }[]): string {
   return result || '0';
 }
 function equationExpression(terms: AuditEquation['terms'], rhs: string): string {
-  return `${linear(terms.map(term => ({ ...term, name: `x(v${term.node})` })))} = ${rhs}`;
+  return `${linear(terms.map(term => ({ ...term, name: `b(v${term.node})` })))} = ${rhs}`;
 }
 function unused(expression: string): Subcheck { return { status: 'not-reached', expression, witness: null }; }
 const reasonStep: Record<string, number> = {
@@ -139,7 +139,7 @@ function schedule(round: number, ell: number, variant: Variant): NonNullable<Aud
 
 // RREF is diagnostic only, and runs only for the two rejection reasons for
 // which the engine omits a solution. Row combinations certify inconsistency;
-// a nonzero null vector certifies failure of uniqueness without adding Σx=m.
+// a nonzero null vector certifies failure of uniqueness without adding Σb=m.
 function linearWitness(equations: AuditEquation[], columns: number[], reason: string): string | null {
   const width = columns.length;
   const columnIndex = new Map(columns.map((id, index) => [id, index]));
@@ -203,7 +203,7 @@ export function buildAuditDetails(input: AuditDetailsInput): AuditDetails {
     summary: '', witness: null, evidence: [], steps: [],
     structure: { levels: [], leaderNodes: [], missingChildren: [], flatLevels: [], flatChecks: [] },
     equations: [],
-    solution: { values: [], unique: unused('The flow and leader equations must have a unique solution.'), integral: unused('Every x(v) must be an integer.'), positive: unused('Every x(v) must be positive.'), total: unused('The separate post-solve check is Σ x(v) = m.') },
+    solution: { values: [], unique: unused('The flow and leader equations must have a unique solution.'), integral: unused('Every b(v) must be an integer.'), positive: unused('Every b(v) must be positive.'), total: unused('The separate post-solve check is Σ b(v) = m.') },
     backward: { values: [], flows: [] }, descendants: [],
   };
   // Mask before accessing mathematical fields. Copy only local mathematical
@@ -232,15 +232,15 @@ export function buildAuditDetails(input: AuditDetailsInput): AuditDetails {
   if (kind === 'waiting') {
     const next = details.nextTest;
     details.summary = next ? `No test is scheduled at round ${round}.` : 'This agent has halted; no further test is scheduled.';
-    if (next) details.evidence.push({ label: 'Schedule', expression: next.kind === 'all-leaders' ? 'At round ℓ, inspect L_0 for a nonleader node.' : variant === 'sharp' && ell > 1 ? `t = 2m − 2; prefix ends at L_(m−1). Next cutoff: L_${next.finalLevel}.` : `t = 2m − 1; prefix ends at L_m. Next cutoff: L_${next.finalLevel}.`, result: 'info' });
+    if (next) details.evidence.push({ label: 'Schedule', expression: next.kind === 'all-leaders' ? 'At round ℓ, inspect 𝓛_0 for a nonleader node.' : variant === 'sharp' && ell > 1 ? `t = 2m − 2; prefix ends at 𝓛_(m−1). Next cutoff: 𝓛_${next.finalLevel}.` : `t = 2m − 1; prefix ends at 𝓛_m. Next cutoff: 𝓛_${next.finalLevel}.`, result: 'info' });
     return details;
   }
   if (kind === 'all-leaders') {
     const accepted = audit.status === 'accepted';
     const nonleaderIds = nonleaders.map(node => node.id);
-    details.summary = accepted ? `At round ℓ = ${ell}, no nonleader is visible in L_0; output ℓ = ${ell} and halt.` : `At round ℓ = ${ell}, a nonleader is visible in L_0; the all-leaders check fails.`;
-    details.witness = accepted ? null : `Visible nonleader${nonleaderIds.length === 1 ? '' : 's'} in L_0: ${nonleaderIds.map(id => `v${id}`).join(', ')}.`;
-    details.evidence = [{ label: 'All-leaders condition', expression: `Visible nonleader nodes in L_0: ${count(nonleaders)}${nonleaderIds.length ? ` (${nonleaderIds.map(id => `v${id}`).join(', ')})` : ''}. Required: 0.`, result: accepted ? 'pass' : 'fail', nodes: nonleaderIds }];
+    details.summary = accepted ? `At round ℓ = ${ell}, no nonleader is visible in 𝓛_0; output ℓ = ${ell} and halt.` : `At round ℓ = ${ell}, a nonleader is visible in 𝓛_0; the all-leaders check fails.`;
+    details.witness = accepted ? null : `Visible nonleader${nonleaderIds.length === 1 ? '' : 's'} in 𝓛_0: ${nonleaderIds.map(id => `v${id}`).join(', ')}.`;
+    details.evidence = [{ label: 'All-leaders condition', expression: `Visible nonleader nodes in 𝓛_0: ${count(nonleaders)}${nonleaderIds.length ? ` (${nonleaderIds.map(id => `v${id}`).join(', ')})` : ''}. Required: 0.`, result: accepted ? 'pass' : 'fail', nodes: nonleaderIds }];
     return details;
   }
 
@@ -261,36 +261,36 @@ export function buildAuditDetails(input: AuditDetailsInput): AuditDetails {
     details.structure.flatChecks.push({ level, parents, flat });
     if (flat) details.structure.flatLevels.push(level);
   }
-  structureStep.evidence.push({ label: 'Leader in L_0', expression: leaders.length ? `${leaders.map(node => `v${node.id}`).join(', ')} is visible in L_0.` : 'No leader node is visible in L_0.', result: leaders.length ? 'pass' : 'fail', nodes: leaders.map(node => node.id) });
+  structureStep.evidence.push({ label: 'Leader in 𝓛_0', expression: leaders.length ? `${leaders.map(node => `v${node.id}`).join(', ')} is visible in 𝓛_0.` : 'No leader node is visible in 𝓛_0.', result: leaders.length ? 'pass' : 'fail', nodes: leaders.map(node => node.id) });
   if (audit.reason !== 'leader_missing') {
     for (const level of details.structure.levels) {
-      structureStep.evidence.push({ label: `Level L_${level.level}`, expression: `|L_${level.level}| = ${level.count} ${level.passes ? '≤' : '>'} m = ${m}.`, result: level.passes ? 'pass' : 'fail', nodes: at(level.level).map(node => node.id) });
+      structureStep.evidence.push({ label: `Level 𝓛_${level.level}`, expression: `|𝓛_${level.level}| = ${level.count} ${level.passes ? '≤' : '>'} m = ${m}.`, result: level.passes ? 'pass' : 'fail', nodes: at(level.level).map(node => node.id) });
       if (audit.reason === 'node_limit' && !level.passes) break;
     }
   }
   if (!['leader_missing', 'node_limit'].includes(audit.reason)) {
     const missing = details.structure.missingChildren;
-    structureStep.evidence.push({ label: 'Children through the cutoff', expression: missing.length ? `${missing.map(id => `v${id} ∈ L_${byId.get(id)!.level}: 0 children in L_${byId.get(id)!.level + 1}`).join('; ')}.` : `Every node in L_0,…,L_${cutoff - 1} has a child in the next level.`, result: missing.length ? 'fail' : 'pass', nodes: missing });
+    structureStep.evidence.push({ label: 'Children through the cutoff', expression: missing.length ? `${missing.map(id => `v${id} ∈ 𝓛_${byId.get(id)!.level}: 0 children in 𝓛_${byId.get(id)!.level + 1}`).join('; ')}.` : `Every node in 𝓛_0,…,𝓛_${cutoff - 1} has a child in the next level.`, result: missing.length ? 'fail' : 'pass', nodes: missing });
   }
   if (!['leader_missing', 'node_limit', 'missing_child'].includes(audit.reason)) {
-    for (const flat of details.structure.flatChecks) structureStep.evidence.push({ label: `Flatness of L_${flat.level}`, expression: `${flat.parents.map(parent => `v${parent.node}: ${parent.count} child${parent.count === '1' ? '' : 'ren'}`).join('; ') || 'No preceding nodes'}. ${flat.flat ? 'Flat: every preceding node has exactly one child.' : 'Not flat.'}`, result: 'info', nodes: flat.parents.map(parent => parent.node) });
-    structureStep.evidence.push({ label: 'At least one flat level', expression: details.structure.flatLevels.length ? `Flat levels: ${details.structure.flatLevels.map(level => `L_${level}`).join(', ')}.` : `No flat level in L_1,…,L_${cutoff}.`, result: details.structure.flatLevels.length ? 'pass' : 'fail' });
+    for (const flat of details.structure.flatChecks) structureStep.evidence.push({ label: `Flatness of 𝓛_${flat.level}`, expression: `${flat.parents.map(parent => `v${parent.node}: ${parent.count} child${parent.count === '1' ? '' : 'ren'}`).join('; ') || 'No preceding nodes'}. ${flat.flat ? 'Flat: every preceding node has exactly one child.' : 'Not flat.'}`, result: 'info', nodes: flat.parents.map(parent => parent.node) });
+    structureStep.evidence.push({ label: 'At least one flat level', expression: details.structure.flatLevels.length ? `Flat levels: ${details.structure.flatLevels.map(level => `𝓛_${level}`).join(', ')}.` : `No flat level in 𝓛_1,…,𝓛_${cutoff}.`, result: details.structure.flatLevels.length ? 'pass' : 'fail' });
   }
-  if (audit.reason === 'leader_missing') structureStep.witness = 'L_0 contains no visible leader node.';
+  if (audit.reason === 'leader_missing') structureStep.witness = '𝓛_0 contains no visible leader node.';
   if (audit.reason === 'node_limit') {
     const bad = details.structure.levels.find(level => !level.passes);
-    if (bad) structureStep.witness = `|L_${bad.level}| = ${bad.count} > m = ${m}.`;
+    if (bad) structureStep.witness = `|𝓛_${bad.level}| = ${bad.count} > m = ${m}.`;
   }
   if (audit.reason === 'missing_child') {
     const id = details.structure.missingChildren[0];
-    if (id !== undefined) structureStep.witness = `v${id} ∈ L_${byId.get(id)!.level} has 0 children in L_${byId.get(id)!.level + 1}.`;
+    if (id !== undefined) structureStep.witness = `v${id} ∈ 𝓛_${byId.get(id)!.level} has 0 children in 𝓛_${byId.get(id)!.level + 1}.`;
   }
-  if (audit.reason === 'no_flat') structureStep.witness = `No level L_1,…,L_${cutoff} is flat; ${details.structure.flatChecks.map(check => { const bad = check.parents.find(parent => parent.count !== '1'); return bad ? `L_${check.level}: v${bad.node} has ${bad.count} children` : `L_${check.level}: no preceding node`; }).join('; ')}.`;
+  if (audit.reason === 'no_flat') structureStep.witness = `No level 𝓛_1,…,𝓛_${cutoff} is flat; ${details.structure.flatChecks.map(check => { const bad = check.parents.find(parent => parent.count !== '1'); return bad ? `𝓛_${check.level}: v${bad.node} has ${bad.count} children` : `𝓛_${check.level}: no preceding node`; }).join('; ')}.`;
   structureStep.summary = structureStep.status === 'passed' ? `Leader visible; level sizes ≤ ${m}; children present; a flat level exists.` : structureStep.witness ?? `The engine rejects the visible structure (${audit.reason}).`;
 
   if (anchorStep.status !== 'not-reached' && anchor !== null) {
     anchorStep.summary = `Choose the latest flat level: h = ${anchor}.`;
-    anchorStep.evidence.push({ label: 'Latest flat level', expression: `h = max{${details.structure.flatLevels.join(', ')}} = ${anchor}; |L_${anchor - 1}| = ${count(at(anchor - 1))} = |L_${anchor}| = ${count(at(anchor))}.`, result: 'pass', nodes: at(anchor).map(node => node.id) });
+    anchorStep.evidence.push({ label: 'Latest flat level', expression: `h = max{${details.structure.flatLevels.join(', ')}} = ${anchor}; |𝓛_${anchor - 1}| = ${count(at(anchor - 1))} = |𝓛_${anchor}| = ${count(at(anchor))}.`, result: 'pass', nodes: at(anchor).map(node => node.id) });
   }
 
   if (solveStep.status !== 'not-reached' && anchor !== null) {
@@ -302,9 +302,10 @@ export function buildAuditDetails(input: AuditDetailsInput): AuditDetails {
       const leader = index === predecessors.length;
       const terms = eq.terms.filter(term => columnSet.has(term.node)).map(term => ({ node: term.node, coefficient: format(parse(term.coefficient)) }));
       const rhs = format(parse(eq.rhs));
-      return { label: leader ? `Leader equation L(${anchor})` : `Flow equation F(${anchor}, v${parent})`, kind: leader ? 'leader' as const : 'flow' as const, parent, level: anchor, terms, rhs, expression: equationExpression(terms, rhs) };
+      return { label: leader ? `Leader equation at 𝓛_${anchor}` : `Flow equation at 𝓛_${anchor} for u = v${parent}`, kind: leader ? 'leader' as const : 'flow' as const, parent, level: anchor, terms, rhs, expression: equationExpression(terms, rhs) };
     });
-    for (const eq of details.equations) solveStep.evidence.push({ label: eq.label, expression: `${eq.expression}${eq.kind === 'leader' ? ` (known leader count ℓ = ${ell})` : ''}.`, nodes: [...(eq.parent === null ? [] : [eq.parent]), ...eq.terms.map(term => term.node)] });
+    solveStep.evidence.push({ label: 'Anchor flow equations', expression: `Σ_{v ∈ 𝓛_${anchor}} μ_${anchor}(u,v)b(v) = Σ_{w child of u in 𝓛_${anchor}} d_${anchor}(w)b(w), for u ∈ 𝓛_${anchor - 1}.` });
+    for (const eq of details.equations) solveStep.evidence.push({ label: eq.label, expression: `${eq.expression}${eq.kind === 'leader' ? ` (Σ_{v leader node in 𝓛_${anchor}} b(v) = ℓ = ${ell})` : ''}.`, nodes: [...(eq.parent === null ? [] : [eq.parent]), ...eq.terms.map(term => term.node)] });
     const uniquenessFailed = audit.reason === 'inconsistent' || audit.reason === 'non_unique';
     const witness = uniquenessFailed ? linearWitness(details.equations, columns, audit.reason) ?? (audit.reason === 'inconsistent' ? 'The engine reports an inconsistent system.' : 'The engine reports a non-unique solution.') : null;
     details.solution.unique = { status: uniquenessFailed ? 'failed' : 'passed', expression: uniquenessFailed ? witness! : `The flow and leader equations have a unique solution in ${columns.length} unknown${columns.length === 1 ? '' : 's'}.`, witness };
@@ -312,18 +313,18 @@ export function buildAuditDetails(input: AuditDetailsInput): AuditDetails {
     if (!uniquenessFailed) {
       const values = details.solution.values;
       const noninteger = values.find(value => parse(value.value).d !== 1n);
-      details.solution.integral = { status: audit.reason === 'non_integer' ? 'failed' : 'passed', expression: noninteger ? `x(v${noninteger.node}) = ${noninteger.value} ∉ ℤ.` : 'Every x(v) is an integer.', witness: audit.reason === 'non_integer' && noninteger ? `x(v${noninteger.node}) = ${noninteger.value} ∉ ℤ.` : null };
+      details.solution.integral = { status: audit.reason === 'non_integer' ? 'failed' : 'passed', expression: noninteger ? `b(v${noninteger.node}) = ${noninteger.value} ∉ ℤ.` : 'Every b(v) is an integer.', witness: audit.reason === 'non_integer' && noninteger ? `b(v${noninteger.node}) = ${noninteger.value} ∉ ℤ.` : null };
       if (audit.reason !== 'non_integer') {
         const nonpositive = values.find(value => parse(value.value).n <= 0n);
-        details.solution.positive = { status: audit.reason === 'non_positive' ? 'failed' : 'passed', expression: nonpositive ? `x(v${nonpositive.node}) = ${nonpositive.value} ≤ 0.` : 'Every x(v) > 0.', witness: audit.reason === 'non_positive' && nonpositive ? `x(v${nonpositive.node}) = ${nonpositive.value} ≤ 0.` : null };
+        details.solution.positive = { status: audit.reason === 'non_positive' ? 'failed' : 'passed', expression: nonpositive ? `b(v${nonpositive.node}) = ${nonpositive.value} ≤ 0.` : 'Every b(v) > 0.', witness: audit.reason === 'non_positive' && nonpositive ? `b(v${nonpositive.node}) = ${nonpositive.value} ≤ 0.` : null };
         if (audit.reason !== 'non_positive') {
           const total = format(sum(values.map(value => parse(value.value))));
-          const expression = `Σ_{v ∈ L_${anchor}} x(v) = ${values.map(value => value.value).join(' + ') || '0'} = ${total} ${audit.reason === 'wrong_total' ? '≠' : '='} m = ${m}. This is a separate post-solve check, not a system equation.`;
-          details.solution.total = { status: audit.reason === 'wrong_total' ? 'failed' : 'passed', expression, witness: audit.reason === 'wrong_total' ? `Σ x(v) = ${total} ≠ m = ${m}.` : null };
+          const expression = `Σ_{v ∈ 𝓛_${anchor}} b(v) = ${values.map(value => value.value).join(' + ') || '0'} = ${total} ${audit.reason === 'wrong_total' ? '≠' : '='} m = ${m}. This is a separate post-solve check, not a system equation.`;
+          details.solution.total = { status: audit.reason === 'wrong_total' ? 'failed' : 'passed', expression, witness: audit.reason === 'wrong_total' ? `Σ b(v) = ${total} ≠ m = ${m}.` : null };
         }
       }
     }
-    for (const value of details.solution.values) solveStep.evidence.push({ label: `Candidate anonymity x(v${value.node})`, expression: `x(v${value.node}) = ${value.value}.`, nodes: [value.node] });
+    for (const value of details.solution.values) solveStep.evidence.push({ label: `Candidate anonymity b(v${value.node})`, expression: `b(v${value.node}) = ${value.value}.`, nodes: [value.node] });
     solveStep.witness = [details.solution.unique, details.solution.integral, details.solution.positive, details.solution.total].find(check => check.status === 'failed')?.witness ?? null;
     solveStep.summary = solveStep.status === 'passed' ? `Unique positive integer solution; its separate total equals m = ${m}.` : solveStep.witness ?? 'The anchor solution fails an engine check.';
   }
@@ -336,7 +337,7 @@ export function buildAuditDetails(input: AuditDetailsInput): AuditDetails {
         const value = sum(terms.map(term => parse(term.value)));
         values.set(node.id, value);
         details.backward.values.push({ node: node.id, level, value: format(value), children: terms });
-        backwardStep.evidence.push({ label: `Disjoint refinement at v${node.id} ∈ L_${level}`, expression: `x(v${node.id}) = ${terms.map(term => `x(v${term.node})`).join(' + ') || '0'} = ${terms.map(term => term.value).join(' + ') || '0'} = ${format(value)}.`, nodes: [node.id, ...terms.map(term => term.node)] });
+        backwardStep.evidence.push({ label: `Disjoint refinement at v${node.id} ∈ 𝓛_${level}`, expression: `b(v${node.id}) = ${terms.map(term => `b(v${term.node})`).join(' + ') || '0'} = ${terms.map(term => term.value).join(' + ') || '0'} = ${format(value)}.`, nodes: [node.id, ...terms.map(term => term.node)] });
       }
     }
     for (let level = 1; level < anchor; level++) {
@@ -362,14 +363,14 @@ export function buildAuditDetails(input: AuditDetailsInput): AuditDetails {
         const lhs = format(left.get(node.id) ?? zero);
         const rhs = format(right.get(node.id) ?? zero);
         const passes = lhs === rhs;
-        const expression = `Received from v${node.id}: Σ μ·x = ${(incomingTerms.get(node.id) ?? []).join(' + ') || '0'} = ${lhs}; sent by children of v${node.id}: Σ d·x = ${(outgoingTerms.get(node.id) ?? []).join(' + ') || '0'} = ${rhs}; ${lhs} ${passes ? '=' : '≠'} ${rhs}.`;
+        const expression = `Received from v${node.id}: Σ_{v ∈ 𝓛_${level}} μ_${level}(v${node.id},v)b(v) = ${(incomingTerms.get(node.id) ?? []).join(' + ') || '0'} = ${lhs}; sent by children of v${node.id}: Σ_{w child of v${node.id} in 𝓛_${level}} d_${level}(w)b(w) = ${(outgoingTerms.get(node.id) ?? []).join(' + ') || '0'} = ${rhs}; ${lhs} ${passes ? '=' : '≠'} ${rhs}.`;
         details.backward.flows.push({ node: node.id, level, left: lhs, right: rhs, passes, expression });
-        backwardStep.evidence.push({ label: `Flow equation F(${level}, v${node.id})`, expression, result: passes ? 'pass' : 'fail', nodes: [node.id] });
+        backwardStep.evidence.push({ label: `Flow equation at 𝓛_${level} for u = v${node.id}`, expression, result: passes ? 'pass' : 'fail', nodes: [node.id] });
       }
     }
     const bad = details.backward.flows.find(flow => !flow.passes);
-    backwardStep.witness = audit.reason === 'backward_flow' && bad ? `F(${bad.level}, v${bad.node}): incoming total ${bad.left} ≠ outgoing total ${bad.right}.` : null;
-    backwardStep.summary = backwardStep.status === 'passed' ? anchor === 1 ? 'Propagated through L_−1; no earlier flow level to check.' : 'Propagated through L_−1; every earlier flow equation holds.' : backwardStep.witness ?? 'An earlier flow equation fails.';
+    backwardStep.witness = audit.reason === 'backward_flow' && bad ? `Flow equation at 𝓛_${bad.level} for u = v${bad.node}: incoming total ${bad.left} ≠ outgoing total ${bad.right}.` : null;
+    backwardStep.summary = backwardStep.status === 'passed' ? anchor === 1 ? 'Propagated through 𝓛_−1; no earlier flow level to check.' : 'Propagated through 𝓛_−1; every earlier flow equation holds.' : backwardStep.witness ?? 'An earlier flow equation fails.';
   }
 
   if (suffixStep.status !== 'not-reached' && anchor !== null) {
@@ -388,17 +389,17 @@ export function buildAuditDetails(input: AuditDetailsInput): AuditDetails {
       const list = descendants.get(above) ?? [];
       list.push(node.id); descendants.set(above, list);
     }
-    suffixStep.evidence.push({ label: 'Descendant cutoff', expression: `Count black-tree descendants in L_${cutoff}${anchor === cutoff ? '; h equals the cutoff, so every anchor node counts itself' : ''}. Red message edges do not add descendants.`, result: 'info' });
+    suffixStep.evidence.push({ label: 'Descendant cutoff', expression: `Count black-tree descendants in 𝓛_${cutoff}${anchor === cutoff ? '; h equals the cutoff, so every anchor node counts itself' : ''}. Red message edges do not add descendants.`, result: 'info' });
     for (const value of details.solution.values) {
       const ids = descendants.get(value.node) ?? [];
       const q = count(ids);
-      const x = parse(value.value);
-      const passes = q * x.d <= x.n;
+      const b = parse(value.value);
+      const passes = q * b.d <= b.n;
       details.descendants.push({ node: value.node, count: String(q), value: value.value, passes, descendantNodes: ids });
     }
     const bad = details.descendants.find(item => !item.passes);
-    suffixStep.witness = audit.reason === 'suffix' && bad ? `q(v${bad.node}) = ${bad.count} > x(v${bad.node}) = ${bad.value} at L_${cutoff}.` : null;
-    suffixStep.summary = suffixStep.status === 'passed' ? `Every q(v) ≤ x(v) at L_${cutoff}; accept m = ${m}, output ${m}, and halt.` : suffixStep.witness ?? 'A suffix descendant bound fails.';
+    suffixStep.witness = audit.reason === 'suffix' && bad ? `q(v${bad.node}) = ${bad.count} > b(v${bad.node}) = ${bad.value} at 𝓛_${cutoff}.` : null;
+    suffixStep.summary = suffixStep.status === 'passed' ? `Every q(v) ≤ b(v) at 𝓛_${cutoff}; accept m = ${m}, output ${m}, and halt.` : suffixStep.witness ?? 'A suffix descendant bound fails.';
   }
   details.witness = details.steps.find(step => step.status === 'failed')?.witness ?? null;
   details.summary = audit.status === 'accepted' ? `All five steps pass. Output m = ${m} and halt.` : `Reject m = ${m} at Step ${failure}: ${details.witness ?? audit.reason}`;
