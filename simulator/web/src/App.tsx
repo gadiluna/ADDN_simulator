@@ -249,6 +249,7 @@ export default function App() {
 
     <SplitWorkspace open={detailsOpen}>
       <section className="experiment-panel" aria-label="Simulation workspace">
+        <p className="network-hint">Click a node to explore its vista and the core algorithm’s local checks.</p>
         <div className="graph-stage">
           <Graph {...graphProps} designatedAgent={designatedAgent} animate={engineReady && round > 0 && playing} mode="network" />
           {observer && <div className="observer-banner">Observer knowledge · unavailable to the algorithm</div>}
