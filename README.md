@@ -1,5 +1,11 @@
 # ADDN simulator
 
+> **Companion code for the paper**
+> **[Computation in Anonymous Directed Dynamic Networks: Exact Worst-Case Termination Time and Network-Wise Intractability](https://arxiv.org/abs/2611.01761)**
+> by **Giuseppe A. Di Luna and Giovanni Viglietta**.
+>
+> [Paper on arXiv](https://arxiv.org/abs/2611.01761) · [Lean formalization](https://github.com/gadiluna/ADDN_lean) · [Live simulator](https://gadiluna.github.io/ADDN_simulator/)
+
 [Open the simulator](https://gadiluna.github.io/ADDN_simulator/)
 
 An interactive simulator for the core counting algorithm (§4.1 of the paper)
